@@ -40,38 +40,74 @@
 - client-side query with fetch api
 - typesense data sync
 - static file server
-- functions server
-- crestfall studio
-  - postgresql tables
-    - table editor
-    - query editor
-    - typesense collections
-  - authentication
-    - users
-    - sessions
-  - authorization
-  - functions
-  - cron jobs
-  - storage
-  - logs
-  - backup
-  - recovery
 - functions
   - how to load moduiles
+
+#### Crestfall Studio
+
+- postgresql tables
+  - table editor
+  - query editor
+  - typesense collections
+- authentication
+  - users
+  - sessions
+- authorization
+- functions
+- cron jobs
+- storage
+- logs
+- backup
+- recovery
 
 ### Under Review
 
 - integrate supabase graphql
 - integrate pgbouncer
 - integrate pgaudit
-- postgresql-redis extension
-  - postgresql trigger + redis pub/sub
-  - learn c: https://beej.us/guide/bgc/
-  - learn network programming: https://beej.us/guide/bgnet/
-  - learn extensions: https://www.postgresql.org/docs/current/extend.html
-  - integrate redis: https://github.com/redis/hiredis
 
-### Caddy (Under Review)
+#### Crestfall Web Server
+
+- serve web pages
+- serve static files
+- serve functions
+
+#### Crestfall Functions
+
+- build step: pull codes
+- build step: apply env
+- build step: install modules
+- build step: bind routes
+- local development environment
+- remote staging environment
+- remote production environment
+- access to built-in secrets
+- access to custom secrets (from env)
+- access to built-in s3 storage
+- access to built-in redis cache
+
+#### PostgreSQL Redis Extension
+
+- postgresql trigger + redis pub/sub
+- learn c: https://beej.us/guide/bgc/
+- learn network programming: https://beej.us/guide/bgnet/
+- learn extensions: https://www.postgresql.org/docs/current/extend.html
+- integrate redis: https://github.com/redis/hiredis
+
+#### Caddy
 
 - docker: https://hub.docker.com/_/caddy
 - wildcard: https://caddyserver.com/docs/automatic-https#wildcard-certificates
+
+#### Pricing
+
+```
+https://news.ycombinator.com/item?id=32987502
+
+(supabase ceo)
+EBS pricing is here: https://aws.amazon.com/ebs/pricing/
+
+I'd have to check with the team but I'm 80% sure we're on gp3 ($0.08/GB-month).
+
+That said, we have a very generous free tier. With AWS we have an enterprise plan + savings plan + reserved instances. Not all of these affect EBS pricing, but we end up paying a lot less than the average AWS user due to our high-usage.
+```
