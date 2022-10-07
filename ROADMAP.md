@@ -56,6 +56,8 @@
   - logs
   - backup
   - recovery
+- functions
+  - how to load moduiles
 
 ### Under Review
 
@@ -68,3 +70,7 @@
   - learn network programming: https://beej.us/guide/bgnet/
   - learn extensions: https://www.postgresql.org/docs/current/extend.html
   - integrate redis: https://github.com/redis/hiredis
+
+### Caddy (Under Review)
+
+- wildcard: https://caddyserver.com/docs/automatic-https#wildcard-certificates
