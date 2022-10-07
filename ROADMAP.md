@@ -99,6 +99,16 @@
 - docker: https://hub.docker.com/_/caddy
 - wildcard: https://caddyserver.com/docs/automatic-https#wildcard-certificates
 
+#### PGBouncer
+
+- https://www.pgbouncer.org/config.html#tls-settings
+
+```
+pgbouncer would fit the bill here, including separate configuration for client and server SSL. So you could even use SSL termination to pgbouncer, but go without for the connection between pgbouncer and the Postgres cluster itself.
+
+https://www.reddit.com/r/PostgreSQL/comments/p2dsu0/comment/h8jca7j/?utm_source=reddit&utm_medium=web2x&context=3
+```
+
 #### Envoy
 
 - can use certbot for creating certificates
@@ -110,12 +120,12 @@
 #### Pricing
 
 ```
-https://news.ycombinator.com/item?id=32987502
-
 (supabase ceo)
 EBS pricing is here: https://aws.amazon.com/ebs/pricing/
 
 I'd have to check with the team but I'm 80% sure we're on gp3 ($0.08/GB-month).
 
 That said, we have a very generous free tier. With AWS we have an enterprise plan + savings plan + reserved instances. Not all of these affect EBS pricing, but we end up paying a lot less than the average AWS user due to our high-usage.
+
+https://news.ycombinator.com/item?id=32987502
 ```
