@@ -73,4 +73,5 @@
 
 ### Caddy (Under Review)
 
+- docker: https://hub.docker.com/_/caddy
 - wildcard: https://caddyserver.com/docs/automatic-https#wildcard-certificates
