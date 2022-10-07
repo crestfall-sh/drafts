@@ -101,6 +101,8 @@
 
 #### PGBouncer
 
+- first, as our connection manager
+- second, as our tls handler
 - https://www.pgbouncer.org/config.html#tls-settings
 
 ```
