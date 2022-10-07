@@ -103,6 +103,9 @@
 
 - can use certbot for creating certificates
 - can use envoy for postgresql tls
+- still not stable though
+- https://www.envoyproxy.io/docs/envoy/latest/api-v3/extensions/filters/network/postgres_proxy/v3alpha/postgres_proxy.proto.html
+- https://www.envoyproxy.io/docs/envoy/latest/configuration/listeners/network_filters/postgres_proxy_filter#config-network-filters-postgres-proxy
 
 #### Pricing
 
