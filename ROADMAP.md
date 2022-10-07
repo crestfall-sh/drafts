@@ -98,6 +98,9 @@
 
 - docker: https://hub.docker.com/_/caddy
 - wildcard: https://caddyserver.com/docs/automatic-https#wildcard-certificates
+- studio.example.com for crestfall studio
+- typesense.example.com for typesense server
+- pgbouncer.example.com for postgresql server
 
 #### PGBouncer
 
@@ -111,7 +114,7 @@ pgbouncer would fit the bill here, including separate configuration for client a
 https://www.reddit.com/r/PostgreSQL/comments/p2dsu0/comment/h8jca7j/?utm_source=reddit&utm_medium=web2x&context=3
 ```
 
-#### Envoy
+#### Envoy (discarded)
 
 - can use certbot for creating certificates
 - can use envoy for postgresql tls
