@@ -25,7 +25,7 @@ services:
   postgresql:
     build:
       context: .
-      dockerfile: ./postgresql.dockerfile
+      dockerfile: ./docker-postgresql.dockerfile
     restart: "no"
     ports:
       - 5432:5432
