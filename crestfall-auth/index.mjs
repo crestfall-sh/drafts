@@ -1,8 +1,8 @@
 // @ts-check
 
 import assert from 'assert';
-import crypto from 'crypto';
 import env from '../env.mjs';
+import * as jwt from './hs256.mjs';
 
 console.log({ env });
 
@@ -10,5 +10,17 @@ assert(env.has('PGRST_JWT_SECRET') === true);
 assert(env.has('PGRST_JWT_SECRET_IS_BASE64') === true);
 assert(env.get('PGRST_JWT_SECRET_IS_BASE64') === 'true');
 
-const jwt_secret = Buffer.from(env.get('PGRST_JWT_SECRET'), 'base64');
-console.log({ jwt_secret });
+const secret = env.get('PGRST_JWT_SECRET');
+console.log({ secret });
+
+const header = { alg: 'HS256', typ: 'JWT' };
+console.log({ header });
+
+const payload = { role: 'anon' };
+console.log({ payload });
+
+const token = jwt.create_token(header, payload, secret);
+console.log({ token });
+
+const verified = jwt.verify_token(token, secret);
+console.log({ verified });
