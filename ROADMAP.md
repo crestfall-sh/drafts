@@ -16,6 +16,11 @@
 - PostgREST service at 0.0.0.0:5433
 - TypeSense service at 0.0.0.0:8018
 
+#### Environment Variables
+
+- https://docs.docker.com/compose/environment-variables/
+- https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml
+
 ### In Progress
 
 - PostgreSQL
@@ -29,9 +34,6 @@
 
 ### Planned
 
-- use environment variables
-  - https://docs.docker.com/compose/environment-variables/
-  - https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml
 - integrate crestfall_authentication: auth.uid()
 - integrate crestfall_authorization: is_authorized()
 - integrate crestfall_audit: track()
