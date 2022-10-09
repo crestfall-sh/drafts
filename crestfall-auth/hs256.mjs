@@ -1,5 +1,9 @@
 // @ts-check
 
+// References
+// - https://gist.github.com/kepawni/45c9b37dd64a4327ff7806147b1368df#file-simplejwt-php-L96
+// - https://latacora.micro.blog/2018/06/12/a-childs-garden.html
+
 /**
  * @typedef {import('./hs256').header} header
  * @typedef {import('./hs256').payload} payload
