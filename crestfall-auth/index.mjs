@@ -4,8 +4,7 @@ import assert from 'assert';
 import readline from 'node:readline/promises';
 import fetch from 'node-fetch';
 import * as uwu from 'modules/uwu.mjs';
-
-import * as hs256 from './hs256.mjs';
+import * as hs256 from 'modules/hs256.mjs';
 import env from '../env.mjs';
 
 console.log({ env });
@@ -43,6 +42,17 @@ process.nextTick(async () => {
       case '/su': {
         const token = create_anon_token();
         console.log({ token });
+        const response = await fetch('http://0.0.0.0:9090/sign-up', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ email: 'joshxyzhimself@gmail.com', password: 'test1234' }),
+        });
+        assert(response.status === 200);
+        const response_json = await response.json();
+        console.log({ response_json });
         break;
       }
       default: {
@@ -92,7 +102,7 @@ process.nextTick(async () => {
       const password = request.json.password;
       assert(typeof password === 'string');
 
-      const header_authorization = request.headers.get('Authorization ');
+      const header_authorization = request.headers.get('Authorization');
       assert(typeof header_authorization === 'string');
       assert(header_authorization.substring(0, 7) === 'Bearer ');
 
