@@ -3,6 +3,8 @@
 import assert from 'assert';
 import readline from 'node:readline/promises';
 import fetch from 'node-fetch';
+import * as uwu from 'modules/uwu.mjs';
+
 import * as jwt from './hs256.mjs';
 import env from '../env.mjs';
 
@@ -17,7 +19,7 @@ console.log({ secret });
 
 const rli = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-const loop = async () => {
+const readline_loop = async () => {
   const line = await rli.question('');
   switch (line) {
     case '/ct': {
@@ -36,6 +38,7 @@ const loop = async () => {
       break;
     }
   }
-  process.nextTick(loop);
+  process.nextTick(readline_loop);
 };
-process.nextTick(loop);
+process.nextTick(readline_loop);
+
