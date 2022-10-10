@@ -20,7 +20,7 @@ const rli = readline.createInterface({ input: process.stdin, output: process.std
 const loop = async () => {
   const line = await rli.question('');
   switch (line) {
-    case 'ct': {
+    case '/ct': {
       const header = { alg: 'HS256', typ: 'JWT' };
       console.log({ header });
       const payload = { role: 'anon' };
