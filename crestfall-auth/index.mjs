@@ -19,28 +19,41 @@ console.log({ secret });
 
 const rli = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-const readline_loop = async () => {
-  const line = await rli.question('');
-  switch (line) {
-    case '/ct': {
-      const header = { alg: 'HS256', typ: 'JWT' };
-      console.log({ header });
-      const payload = { role: 'anon' };
-      console.log({ payload });
-      const token = hs256.create_token(header, payload, secret);
-      console.log({ token });
-      const verified = hs256.verify_token(token, secret);
-      console.log({ verified });
-      break;
+process.nextTick(async () => {
+  const create_anon_token = () => {
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const payload = { role: 'anon' };
+    const token = hs256.create_token(header, payload, secret);
+    return token;
+  };
+  const readline_loop = async () => {
+    const line = await rli.question('');
+    switch (line) {
+      case '/ct': {
+        const header = { alg: 'HS256', typ: 'JWT' };
+        console.log({ header });
+        const payload = { role: 'anon' };
+        console.log({ payload });
+        const token = hs256.create_token(header, payload, secret);
+        console.log({ token });
+        const verified = hs256.verify_token(token, secret);
+        console.log({ verified });
+        break;
+      }
+      case '/su': {
+        const token = create_anon_token();
+        console.log({ token });
+        break;
+      }
+      default: {
+        console.log(`Unhandled: ${line}`);
+        break;
+      }
     }
-    default: {
-      console.log(`Unhandled: ${line}`);
-      break;
-    }
-  }
+    process.nextTick(readline_loop);
+  };
   process.nextTick(readline_loop);
-};
-process.nextTick(readline_loop);
+});
 
 process.nextTick(async () => {
 
