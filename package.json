@@ -15,7 +15,7 @@
     "url": "https://github.com/joshxyzhimself/crestfall/issues"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "reinstall-modules": "npm install github:crestfall-sh/modules"
   },
   "devDependencies": {
     "@types/react": "^18.0.17",
@@ -27,6 +27,7 @@
     "vite": "^3.0.7"
   },
   "dependencies": {
+    "modules": "github:crestfall-sh/modules",
     "node-fetch": "^3.2.10"
   }
 }
