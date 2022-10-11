@@ -5,6 +5,7 @@ import readline from 'node:readline/promises';
 import fetch from 'node-fetch';
 import * as uwu from 'modules/uwu.mjs';
 import * as hs256 from 'modules/hs256.mjs';
+import * as luxon from 'luxon';
 import env from '../env.mjs';
 
 console.log({ env });
@@ -21,7 +22,12 @@ const rli = readline.createInterface({ input: process.stdin, output: process.std
 process.nextTick(async () => {
   const create_anon_token = () => {
     const header = { alg: 'HS256', typ: 'JWT' };
-    const payload = { role: 'anon' };
+    const payload = {
+      iat: luxon.DateTime.now().toSeconds(),
+      nbf: luxon.DateTime.now().toSeconds(),
+      exp: luxon.DateTime.now().plus({ hours: 6 }).toSeconds(),
+      role: 'anon',
+    };
     const token = hs256.create_token(header, payload, secret);
     return token;
   };
@@ -29,11 +35,7 @@ process.nextTick(async () => {
     const line = await rli.question('');
     switch (line) {
       case '/ct': {
-        const header = { alg: 'HS256', typ: 'JWT' };
-        console.log({ header });
-        const payload = { role: 'anon' };
-        console.log({ payload });
-        const token = hs256.create_token(header, payload, secret);
+        const token = create_anon_token();
         console.log({ token });
         const verified = hs256.verify_token(token, secret);
         console.log({ verified });
