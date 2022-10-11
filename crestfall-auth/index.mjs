@@ -234,9 +234,78 @@ process.nextTick(async () => {
         const inserted_user = pg_response_json[0];
         assert(inserted_user instanceof Object);
         Object.assign(user, inserted_user);
+        user.password_salt = null;
+        user.password_key = null;
         response.status = 200;
         response.json.data = { user };
       }
+    } catch (e) {
+      console.error(e);
+      const error = { request, name: e.name, code: e.code, message: e.message, stack: e.stack };
+      response.status = 500;
+      response.json.error = error;
+    }
+  }));
+
+  app.post('/sign-in', uwu.use_middleware(async (response, request) => {
+    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
+    response.json = { data: null, error: null };
+    try {
+
+      // ensure got application/json request body
+      assert(request.json instanceof Object);
+
+      /**
+       * @type {string}
+       */
+      const email = full_casefold_normalize_nfkc(String(request.json.email));
+      assert(typeof email === 'string');
+
+      /**
+       * @type {string}
+       */
+      const password = String(request.json.password).normalize('NFKC');
+      assert(typeof password === 'string');
+
+      const header_authorization = request.headers.get('Authorization');
+      assert(typeof header_authorization === 'string');
+      assert(header_authorization.substring(0, 7) === 'Bearer ');
+
+      const header_authorization_token = header_authorization.substring(7);
+      assert(typeof header_authorization_token === 'string');
+
+      const verified_token = hs256.verify_token(header_authorization_token, secret);
+      assert(verified_token.payload.role === 'anon');
+
+      // [x] ensure user does exist
+      {
+        const pg_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${auth_administrator_token}`,
+            'Accept-Profile': 'auth',
+          },
+        });
+        assert(pg_response.status === 200);
+        const pg_response_json = await pg_response.json();
+        assert(pg_response_json instanceof Array);
+        assert(pg_response_json.length === 1, 'INVALID_EMAIL_OR_PASSWORD');
+        /**
+         * @type {user}
+         */
+        const user = pg_response_json[0];
+        assert(user instanceof Object);
+        assert(typeof user.password_salt === 'string');
+        assert(typeof user.password_key === 'string');
+        const user_password_key_buffer = Buffer.from(user.password_key, 'hex');
+        const password_key_buffer = await scrypt(password, user.password_salt);
+        assert(crypto.timingSafeEqual(user_password_key_buffer, password_key_buffer) === true, 'INVALID_EMAIL_OR_PASSWORD');
+        user.password_salt = null;
+        user.password_key = null;
+        response.status = 200;
+        response.json.data = { user };
+      }
+
     } catch (e) {
       console.error(e);
       const error = { request, name: e.name, code: e.code, message: e.message, stack: e.stack };
