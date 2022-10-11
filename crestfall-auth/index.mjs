@@ -19,32 +19,41 @@ assert(env.get('PGRST_JWT_SECRET_IS_BASE64') === 'true');
 const secret = env.get('PGRST_JWT_SECRET');
 console.log({ secret });
 
-
-
-// non-expiring anon token
-const create_anon_token = () => {
-  const header = { alg: 'HS256', typ: 'JWT' };
-  const payload = {
-    iat: luxon.DateTime.now().toSeconds(),
-    nbf: luxon.DateTime.now().toSeconds(),
-    role: 'anon',
-  };
-  const token = hs256.create_token(header, payload, secret);
-  return token;
-};
-const anon_token = create_anon_token();
-
+/**
+ * What's in here:
+ * - Internal console repl for testing.
+ * - Enter the commands in your console to test them!
+ * - /ct - creates an anon token
+ * - /su - creates an anon token, signs-up a new user
+ */
 process.nextTick(async () => {
+
+  // non-expiring anon token
+  const create_anon_token = () => {
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const payload = {
+      iat: luxon.DateTime.now().toSeconds(),
+      nbf: luxon.DateTime.now().toSeconds(),
+      role: 'anon',
+    };
+    const token = hs256.create_token(header, payload, secret);
+    return token;
+  };
+
   const rli = readline.createInterface({ input: process.stdin, output: process.stdout });
   const readline_loop = async () => {
     const line = await rli.question('');
     switch (line) {
       case '/ct': {
-        const verified = hs256.verify_token(anon_token, secret);
-        console.log({ verified });
+        const anon_token = create_anon_token();
+        console.log({ anon_token });
+        const verified_token = hs256.verify_token(anon_token, secret);
+        console.log({ verified_token });
         break;
       }
       case '/su': {
+        const anon_token = create_anon_token();
+        console.log({ anon_token });
         const response = await fetch('http://0.0.0.0:9090/sign-up', {
           method: 'POST',
           headers: {
@@ -69,22 +78,25 @@ process.nextTick(async () => {
   process.nextTick(readline_loop);
 });
 
-
-
-// non-expiring service token
-const create_auth_administrator_token = () => {
-  const header = { alg: 'HS256', typ: 'JWT' };
-  const payload = {
-    iat: luxon.DateTime.now().toSeconds(),
-    nbf: luxon.DateTime.now().toSeconds(),
-    role: 'auth_administrator',
-  };
-  const token = hs256.create_token(header, payload, secret);
-  return token;
-};
-const auth_administrator_token = create_auth_administrator_token();
-
+/**
+ * What's in here:
+ * - The internal authentication stuff
+ */
 process.nextTick(async () => {
+
+  // non-expiring auth administrator token
+  const create_auth_administrator_token = () => {
+    const header = { alg: 'HS256', typ: 'JWT' };
+    const payload = {
+      iat: luxon.DateTime.now().toSeconds(),
+      nbf: luxon.DateTime.now().toSeconds(),
+      role: 'auth_administrator',
+    };
+    const token = hs256.create_token(header, payload, secret);
+    return token;
+  };
+
+  const auth_administrator_token = create_auth_administrator_token();
 
   const scrypt_length = 64;
 
