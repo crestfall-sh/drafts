@@ -89,13 +89,14 @@ process.nextTick(async () => {
   const scrypt_length = 64;
 
   /**
+   * - https://words.filippo.io/the-scrypt-parameters/
    * @type {import('crypto').ScryptOptions}
    */
   const scrypt_options = { N: 2 ** 15, p: 1, maxmem: 128 * (2 ** 16) * 8 };
 
   /**
    * @param {string} password utf-8 nfkc
-   * @param {string} password_salt base64-encoded
+   * @param {string} password_salt hex-encoded
    * @returns {Promise<Buffer>}
    */
   const scrypt = async (password, password_salt) => {
@@ -105,7 +106,7 @@ process.nextTick(async () => {
      * @type {Buffer}
      */
     const password_key_buffer = await new Promise((resolve, reject) => {
-      crypto.scrypt(Buffer.from(password), Buffer.from(password_salt, 'base64'), scrypt_length, scrypt_options, (error, derived_key) => {
+      crypto.scrypt(Buffer.from(password), Buffer.from(password_salt, 'hex'), scrypt_length, scrypt_options, (error, derived_key) => {
         if (error instanceof Error) {
           reject(error);
           return;
@@ -179,15 +180,16 @@ process.nextTick(async () => {
 
       // [X] create user if it does not exist
       {
-        const password_salt = crypto.randomBytes(32).toString('base64');
+        const verification_code = crypto.randomBytes(64).toString('hex');
+        const password_salt = crypto.randomBytes(32).toString('hex');
         const password_key_buffer = await scrypt(password, password_salt);
-        const password_key = password_key_buffer.toString('base64');
+        const password_key = password_key_buffer.toString('hex');
         const user = {
           id: undefined,
           email: email,
           invitation_code: null,
           invited_at: null,
-          verification_code: null,
+          verification_code: verification_code,
           verified_at: null,
           recovery_code: null,
           recovered_at: null,
