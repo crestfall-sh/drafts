@@ -1,5 +1,9 @@
 // @ts-check
 
+/**
+ * @typedef {import('./index').user} user
+ */
+
 import assert from 'assert';
 import crypto from 'crypto';
 import readline from 'node:readline/promises';
@@ -196,6 +200,9 @@ process.nextTick(async () => {
         const password_salt = crypto.randomBytes(32).toString('hex');
         const password_key_buffer = await scrypt(password, password_salt);
         const password_key = password_key_buffer.toString('hex');
+        /**
+         * @type {user}
+         */
         const user = {
           id: undefined,
           email: email,
@@ -226,6 +233,7 @@ process.nextTick(async () => {
         assert(pg_response_json instanceof Array);
         const inserted_user = pg_response_json[0];
         assert(inserted_user instanceof Object);
+        Object.assign(user, inserted_user);
         response.status = 200;
         response.json.data = { user };
       }
