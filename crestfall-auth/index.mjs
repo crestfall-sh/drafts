@@ -126,21 +126,21 @@ process.nextTick(async () => {
       assert(verified_token.payload.role === 'anon');
 
       // [x] ensure user does not exist
-      const postgrest_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${auth_administrator_token}`,
-          'Accept-Profile': 'auth',
-        },
-      });
-      console.log({ postgrest_response });
-      const postgrest_response_status = postgrest_response.status;
-      assert(postgrest_response_status === 200);
-      const postgrest_response_json = await postgrest_response.json();
-      console.log({ postgrest_response_json });
-      assert(postgrest_response_json instanceof Array);
-      assert(postgrest_response_json.length === 0, 'EMAIL_ALREADY_USED');
+      {
+        const postgrest_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${auth_administrator_token}`,
+            'Accept-Profile': 'auth',
+          },
+        });
+        const postgrest_response_status = postgrest_response.status;
+        assert(postgrest_response_status === 200);
+        const postgrest_response_json = await postgrest_response.json();
+        assert(postgrest_response_json instanceof Array);
+        assert(postgrest_response_json.length === 0, 'EMAIL_ALREADY_USED');
+      }
 
       // [ ] create user if it does not exist
 
