@@ -80,33 +80,6 @@ const auth_administrator_token = create_auth_administrator_token();
 
 process.nextTick(async () => {
 
-  /**
-   * @param {string} method
-   * @param {string} schema
-   * @param {string} table
-   * @param {string} query
-   * @param {string} token
-   * @param {any} [body]
-   */
-  const postgrest = async (method, schema, table, query, token, body) => {
-    assert(typeof method === 'string');
-    assert(typeof schema === 'string');
-    assert(typeof table === 'string');
-    assert(typeof token === 'string');
-    const request_headers = {
-      'Authorization': `Bearer ${token}`,
-      'Accept-Profile': schema,
-      'Content-Type': 'application/json',
-    };
-    const request_body = body instanceof Object ? JSON.stringify(body) : undefined;
-    const response = await fetch(`http://0.0.0.0:5433/${table}?${query}`, {
-      method,
-      headers: request_headers,
-      body: request_body,
-    });
-    return response;
-  };
-
   const app = uwu.uws.App({});
   app.options('/*', uwu.use_middleware(async (response, request) => {
     response.status = 204;
@@ -151,6 +124,7 @@ process.nextTick(async () => {
 
       const verified_token = hs256.verify_token(header_authorization_token, secret);
       console.log({ verified_token });
+      assert(verified_token.payload.role === 'anon');
 
       // [x] ensure user does not exist
       const postgrest_response = await fetch(`http://0.0.0.0:5433/users?select=*:email=${email}`, {
