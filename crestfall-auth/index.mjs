@@ -21,7 +21,7 @@ console.log({ secret });
 
 /**
  * What's in here:
- * - Internal console repl for testing.
+ * - Internal authentication client, in your command line interface
  * - Enter the commands in your console to test them!
  * - /ct - creates an anon token
  * - /su - creates an anon token, signs-up a new user
@@ -80,7 +80,7 @@ process.nextTick(async () => {
 
 /**
  * What's in here:
- * - The internal authentication stuff
+ * - Internal authentication server
  */
 process.nextTick(async () => {
 
