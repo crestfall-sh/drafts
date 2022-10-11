@@ -19,40 +19,38 @@ console.log({ secret });
 
 const rli = readline.createInterface({ input: process.stdin, output: process.stdout });
 
-process.nextTick(async () => {
-  const create_anon_token = () => {
-    const header = { alg: 'HS256', typ: 'JWT' };
-    const payload = {
-      iat: luxon.DateTime.now().toSeconds(),
-      nbf: luxon.DateTime.now().toSeconds(),
-      exp: luxon.DateTime.now().plus({ hours: 6 }).toSeconds(),
-      role: 'anon',
-    };
-    const token = hs256.create_token(header, payload, secret);
-    return token;
+// non-expiring anon token
+const create_anon_token = () => {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = {
+    iat: luxon.DateTime.now().toSeconds(),
+    nbf: luxon.DateTime.now().toSeconds(),
+    role: 'anon',
   };
+  const token = hs256.create_token(header, payload, secret);
+  return token;
+};
+const anon_token = create_anon_token();
+
+process.nextTick(async () => {
   const readline_loop = async () => {
     const line = await rli.question('');
     switch (line) {
       case '/ct': {
-        const token = create_anon_token();
-        console.log({ token });
-        const verified = hs256.verify_token(token, secret);
+        const verified = hs256.verify_token(anon_token, secret);
         console.log({ verified });
         break;
       }
       case '/su': {
-        const token = create_anon_token();
-        console.log({ token });
         const response = await fetch('http://0.0.0.0:9090/sign-up', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
+            'Authorization': `Bearer ${anon_token}`,
           },
           body: JSON.stringify({ email: 'joshxyzhimself@gmail.com', password: 'test1234' }),
         });
-        assert(response.status === 200);
+        console.log(response.status);
         const response_json = await response.json();
         console.log({ response_json });
         break;
@@ -67,7 +65,47 @@ process.nextTick(async () => {
   process.nextTick(readline_loop);
 });
 
+// non-expiring service token
+const create_auth_administrator_token = () => {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = {
+    iat: luxon.DateTime.now().toSeconds(),
+    nbf: luxon.DateTime.now().toSeconds(),
+    role: 'auth_administrator',
+  };
+  const token = hs256.create_token(header, payload, secret);
+  return token;
+};
+const auth_administrator_token = create_auth_administrator_token();
+
 process.nextTick(async () => {
+
+  /**
+   * @param {string} method
+   * @param {string} schema
+   * @param {string} table
+   * @param {string} query
+   * @param {string} token
+   * @param {any} [body]
+   */
+  const postgrest = async (method, schema, table, query, token, body) => {
+    assert(typeof method === 'string');
+    assert(typeof schema === 'string');
+    assert(typeof table === 'string');
+    assert(typeof token === 'string');
+    const request_headers = {
+      'Authorization': `Bearer ${token}`,
+      'Accept-Profile': schema,
+      'Content-Type': 'application/json',
+    };
+    const request_body = body instanceof Object ? JSON.stringify(body) : undefined;
+    const response = await fetch(`http://0.0.0.0:5433/${table}?${query}`, {
+      method,
+      headers: request_headers,
+      body: request_body,
+    });
+    return response;
+  };
 
   const app = uwu.uws.App({});
   app.options('/*', uwu.use_middleware(async (response, request) => {
@@ -114,7 +152,20 @@ process.nextTick(async () => {
       const verified_token = hs256.verify_token(header_authorization_token, secret);
       console.log({ verified_token });
 
-      // [ ] ensure user does not exist
+      // [x] ensure user does not exist
+      const postgrest_response = await fetch(`http://0.0.0.0:5433/users?select=*:email=${email}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${auth_administrator_token}`,
+          'Accept-Profile': 'auth',
+        },
+      });
+      const postgrest_response_status = postgrest_response.status;
+      assert(postgrest_response_status === 200);
+      const postgrest_response_json = await postgrest_response.json();
+      assert(postgrest_response_json instanceof Array);
+      assert(postgrest_response_json.length === 0, 'EMAIL_ALREADY_USED');
 
       // [ ] create user if it does not exist
 

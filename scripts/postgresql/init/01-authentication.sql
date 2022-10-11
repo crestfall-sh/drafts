@@ -1,6 +1,22 @@
 
 -- https://github.com/supabase/supabase/blob/master/docker/volumes/db/init/00-initial-schema.sql
 
+/*
+
+- "authenticator" user:
+  - can ONLY access "public" schema
+  - default role when connecting to the database
+	- can switch to roles: "anon", "user_role", "service_role"
+
+- "administrator" user:
+  - can ONLY access "public" schema
+  - can create tables
+
+- "auth_administrator" user:
+  - can ONLY access "auth" schema
+
+*/
+
 CREATE USER administrator;
 ALTER USER administrator WITH SUPERUSER CREATEDB CREATEROLE REPLICATION BYPASSRLS;
 
@@ -23,12 +39,9 @@ GRANT USAGE ON SCHEMA extensions TO postgres, anon, user_role, service_role;
 
 ALTER USER administrator SET search_path TO public, extensions;
 
-ALTER DEFAULT PRIVILEGES FOR USER administrator IN SCHEMA public
-    GRANT ALL ON TABLES TO postgres, anon, user_role, service_role;
-ALTER DEFAULT PRIVILEGES FOR USER administrator IN SCHEMA public
-    GRANT ALL ON FUNCTIONS TO postgres, anon, user_role, service_role;
-ALTER DEFAULT PRIVILEGES FOR USER administrator IN SCHEMA public
-    GRANT ALL ON SEQUENCES TO postgres, anon, user_role, service_role;
+ALTER DEFAULT PRIVILEGES FOR USER administrator IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, user_role, service_role;
+ALTER DEFAULT PRIVILEGES FOR USER administrator IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, anon, user_role, service_role;
+ALTER DEFAULT PRIVILEGES FOR USER administrator IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, user_role, service_role;
 
 ALTER ROLE anon SET statement_timeout = '5s';
 ALTER ROLE user_role SET statement_timeout = '10s';
