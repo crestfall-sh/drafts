@@ -59,8 +59,8 @@ CREATE TABLE auth.users (
   "verified_at" timestamptz DEFAULT NULL,
   "recovery_code" text DEFAULT NULL,
   "recovered_at" timestamptz DEFAULT NULL,
-	"password_key" text NOT NULL,
 	"password_salt" text NOT NULL,
+	"password_key" text NOT NULL,
 	"metadata" jsonb DEFAULT NULL,
   "created_at" timestamptz DEFAULT now() NOT NULL,
   "updated_at" timestamptz DEFAULT now() NOT NULL

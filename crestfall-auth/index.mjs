@@ -1,11 +1,13 @@
 // @ts-check
 
 import assert from 'assert';
+import crypto from 'crypto';
 import readline from 'node:readline/promises';
 import fetch from 'node-fetch';
+import * as luxon from 'luxon';
 import * as uwu from 'modules/uwu.mjs';
 import * as hs256 from 'modules/hs256.mjs';
-import * as luxon from 'luxon';
+import { full_casefold_normalize_nfkc } from 'modules/casefold.mjs';
 import env from '../env.mjs';
 
 console.log({ env });
@@ -17,7 +19,7 @@ assert(env.get('PGRST_JWT_SECRET_IS_BASE64') === 'true');
 const secret = env.get('PGRST_JWT_SECRET');
 console.log({ secret });
 
-const rli = readline.createInterface({ input: process.stdin, output: process.stdout });
+
 
 // non-expiring anon token
 const create_anon_token = () => {
@@ -33,6 +35,7 @@ const create_anon_token = () => {
 const anon_token = create_anon_token();
 
 process.nextTick(async () => {
+  const rli = readline.createInterface({ input: process.stdin, output: process.stdout });
   const readline_loop = async () => {
     const line = await rli.question('');
     switch (line) {
@@ -48,11 +51,12 @@ process.nextTick(async () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${anon_token}`,
           },
-          body: JSON.stringify({ email: 'joshxyzhimself@gmail.com', password: 'test1234' }),
+          body: JSON.stringify({ email: `${crypto.randomBytes(16).toString('hex')}@gmail.com`, password: 'test1234' }),
         });
         console.log(response.status);
+        console.log(response.headers);
         const response_json = await response.json();
-        console.log({ response_json });
+        console.log(JSON.stringify(response_json, null, 2));
         break;
       }
       default: {
@@ -64,6 +68,8 @@ process.nextTick(async () => {
   };
   process.nextTick(readline_loop);
 });
+
+
 
 // non-expiring service token
 const create_auth_administrator_token = () => {
@@ -79,6 +85,36 @@ const create_auth_administrator_token = () => {
 const auth_administrator_token = create_auth_administrator_token();
 
 process.nextTick(async () => {
+
+  const scrypt_length = 64;
+
+  /**
+   * @type {import('crypto').ScryptOptions}
+   */
+  const scrypt_options = { N: 2 ** 15, p: 1, maxmem: 128 * (2 ** 16) * 8 };
+
+  /**
+   * @param {string} password utf-8 nfkc
+   * @param {string} password_salt base64-encoded
+   * @returns {Promise<Buffer>}
+   */
+  const scrypt = async (password, password_salt) => {
+    assert(typeof password === 'string');
+    assert(typeof password_salt === 'string');
+    /**
+     * @type {Buffer}
+     */
+    const password_key_buffer = await new Promise((resolve, reject) => {
+      crypto.scrypt(Buffer.from(password), Buffer.from(password_salt, 'base64'), scrypt_length, scrypt_options, (error, derived_key) => {
+        if (error instanceof Error) {
+          reject(error);
+          return;
+        }
+        resolve(derived_key);
+      });
+    });
+    return password_key_buffer;
+  };
 
   const app = uwu.uws.App({});
   app.options('/*', uwu.use_middleware(async (response, request) => {
@@ -98,6 +134,7 @@ process.nextTick(async () => {
 
   app.post('/sign-up', uwu.use_middleware(async (response, request) => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
+    response.json = { data: null, error: null };
     try {
 
       // ensure got application/json request body
@@ -106,13 +143,13 @@ process.nextTick(async () => {
       /**
        * @type {string}
        */
-      const email = request.json.email;
+      const email = full_casefold_normalize_nfkc(String(request.json.email));
       assert(typeof email === 'string');
 
       /**
        * @type {string}
        */
-      const password = request.json.password;
+      const password = String(request.json.password).normalize('NFKC');
       assert(typeof password === 'string');
 
       const header_authorization = request.headers.get('Authorization');
@@ -127,31 +164,62 @@ process.nextTick(async () => {
 
       // [x] ensure user does not exist
       {
-        const postgrest_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
+        const pg_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json',
             'Authorization': `Bearer ${auth_administrator_token}`,
             'Accept-Profile': 'auth',
           },
         });
-        const postgrest_response_status = postgrest_response.status;
-        assert(postgrest_response_status === 200);
-        const postgrest_response_json = await postgrest_response.json();
-        assert(postgrest_response_json instanceof Array);
-        assert(postgrest_response_json.length === 0, 'EMAIL_ALREADY_USED');
+        assert(pg_response.status === 200);
+        const pg_response_json = await pg_response.json();
+        assert(pg_response_json instanceof Array);
+        assert(pg_response_json.length === 0, 'EMAIL_ALREADY_USED');
       }
 
-      // [ ] create user if it does not exist
-
-      response.status = 200;
-      response.json = { data: null, error: null };
-
+      // [X] create user if it does not exist
+      {
+        const password_salt = crypto.randomBytes(32).toString('base64');
+        const password_key_buffer = await scrypt(password, password_salt);
+        const password_key = password_key_buffer.toString('base64');
+        const user = {
+          id: undefined,
+          email: email,
+          invitation_code: null,
+          invited_at: null,
+          verification_code: null,
+          verified_at: null,
+          recovery_code: null,
+          recovered_at: null,
+          password_salt: password_salt,
+          password_key: password_key,
+          metadata: {},
+          created_at: undefined,
+          updated_at: undefined,
+        };
+        const pg_response = await fetch('http://0.0.0.0:5433/users', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${auth_administrator_token}`,
+            'Accept-Profile': 'auth',
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation',
+          },
+          body: JSON.stringify(user),
+        });
+        assert(pg_response.status === 201);
+        const pg_response_json = await pg_response.json();
+        assert(pg_response_json instanceof Array);
+        const inserted_user = pg_response_json[0];
+        assert(inserted_user instanceof Object);
+        response.status = 200;
+        response.json.data = { user };
+      }
     } catch (e) {
       console.error(e);
       const error = { request, name: e.name, code: e.code, message: e.message, stack: e.stack };
       response.status = 500;
-      response.json = { data: null, error };
+      response.json.error = error;
     }
   }));
 
