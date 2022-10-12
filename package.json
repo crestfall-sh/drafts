@@ -1,10 +1,8 @@
 {
   "name": "crestfall",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
-  "main": "index.js",
   "author": "joshxyzhimself <joshxyzhimself@gmail.com>",
-  "keywords": [],
   "license": "MIT",
   "homepage": "https://github.com/joshxyzhimself/crestfall",
   "repository": {

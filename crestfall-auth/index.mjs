@@ -12,7 +12,7 @@ import * as luxon from 'luxon';
 import * as uwu from 'modules/uwu.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import { full_casefold_normalize_nfkc } from 'modules/casefold.mjs';
-import env from '../env.mjs';
+import env from './env.mjs';
 
 console.log({ env });
 

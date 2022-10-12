@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
 
-const env_file_path = path.join(process.cwd(), '.env');
+const env_file_path = path.join(process.cwd(), '/crestfall-docker/.env');
 assert(fs.existsSync(env_file_path) === true);
 
 const env_file_data = fs.readFileSync(env_file_path, { encoding: 'utf-8' });

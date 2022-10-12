@@ -25,7 +25,7 @@ services:
   postgresql:
     build:
       context: .
-      dockerfile: ./docker-postgresql.dockerfile
+      dockerfile: ./postgresql/Dockerfile
     restart: "no"
     ports:
       - 5432:5432
@@ -35,7 +35,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?error} # postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?error} # postgres
     volumes:
-      - ./scripts/postgresql/init:/docker-entrypoint-initdb.d
+      - ./postgresql/init:/docker-entrypoint-initdb.d
       - ./volumes/postgresql/data:/var/lib/postgresql/data
 
   # https://hub.docker.com/r/postgrest/postgrest/
