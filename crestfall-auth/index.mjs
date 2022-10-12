@@ -125,7 +125,7 @@ process.nextTick(async () => {
 process.nextTick(async () => {
 
   // non-expiring auth administrator token
-  const create_auth_administrator_token = () => {
+  const create_auth_admin_token = () => {
     const header = { alg: 'HS256', typ: 'JWT' };
     const payload = {
       iat: luxon.DateTime.now().toSeconds(),
@@ -134,13 +134,13 @@ process.nextTick(async () => {
       iss: 'crestfall',
       aud: 'crestfall',
       sub: null,
-      role: 'auth_administrator',
+      role: 'auth_admin',
     };
     const token = hs256.create_token(header, payload, secret);
     return token;
   };
 
-  const auth_administrator_token = create_auth_administrator_token();
+  const auth_admin_token = create_auth_admin_token();
 
   const scrypt_length = 64;
 
@@ -227,7 +227,7 @@ process.nextTick(async () => {
         const pg_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
           method: 'GET',
           headers: {
-            'Authorization': `Bearer ${auth_administrator_token}`,
+            'Authorization': `Bearer ${auth_admin_token}`,
             'Accept-Profile': 'auth',
           },
         });
@@ -265,7 +265,7 @@ process.nextTick(async () => {
         const pg_response = await fetch('http://0.0.0.0:5433/users', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${auth_administrator_token}`,
+            'Authorization': `Bearer ${auth_admin_token}`,
             'Accept-Profile': 'auth',
             'Content-Type': 'application/json',
             'Prefer': 'return=representation',
@@ -336,7 +336,7 @@ process.nextTick(async () => {
       const pg_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${auth_administrator_token}`,
+          'Authorization': `Bearer ${auth_admin_token}`,
           'Accept-Profile': 'auth',
         },
       });
@@ -372,7 +372,7 @@ process.nextTick(async () => {
         iss: 'crestfall',
         aud: 'crestfall',
         sub: user.id,
-        role: 'user_role',
+        role: 'public_user',
       };
       const token = hs256.create_token(header, payload, secret);
 

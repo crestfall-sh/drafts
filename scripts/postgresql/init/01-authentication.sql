@@ -6,49 +6,45 @@
 - "authenticator" user:
   - can ONLY access "public" schema
   - default role when connecting to the database
-	- can switch to roles: "anon", "user_role", "service_role"
+	- can switch to roles: "anon", "public_user", "public_service"
 
-- "administrator" user:
+- "public_admin" user:
   - can ONLY access "public" schema
   - can create tables
 
-- "auth_administrator" user:
+- "auth_admin" user:
   - can ONLY access "auth" schema
 
 */
 
-CREATE USER administrator;
-ALTER USER administrator WITH SUPERUSER CREATEDB CREATEROLE REPLICATION BYPASSRLS;
-
 CREATE ROLE anon NOLOGIN NOINHERIT;
-CREATE ROLE user_role NOLOGIN NOINHERIT;
-CREATE ROLE service_role NOLOGIN NOINHERIT BYPASSRLS;
+CREATE ROLE public_user NOLOGIN NOINHERIT;
+CREATE ROLE public_service NOLOGIN NOINHERIT BYPASSRLS;
 
-CREATE USER authenticator NOINHERIT;
-GRANT anon to authenticator;
-GRANT user_role to authenticator;
-GRANT service_role to authenticator;
-GRANT administrator to authenticator;
+CREATE ROLE public_admin LOGIN SUPERUSER CREATEDB CREATEROLE REPLICATION BYPASSRLS;
+ALTER ROLE public_admin SET search_path TO public, extensions;
 
-GRANT USAGE ON SCHEMA public TO postgres, anon, user_role, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, user_role, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, anon, user_role, service_role;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, user_role, service_role;
+CREATE ROLE authenticator LOGIN NOINHERIT;
+GRANT anon TO authenticator;
+GRANT public_user TO authenticator;
+GRANT public_service TO authenticator;
+GRANT public_admin TO authenticator;
 
-GRANT USAGE ON SCHEMA extensions TO postgres, anon, user_role, service_role;
-
-ALTER USER administrator SET search_path TO public, extensions;
-
-ALTER DEFAULT PRIVILEGES FOR USER administrator IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, user_role, service_role;
-ALTER DEFAULT PRIVILEGES FOR USER administrator IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, anon, user_role, service_role;
-ALTER DEFAULT PRIVILEGES FOR USER administrator IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, user_role, service_role;
+GRANT USAGE ON SCHEMA public TO postgres, anon, public_user, public_service;
+GRANT USAGE ON SCHEMA extensions TO postgres, anon, public_user, public_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, public_user, public_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, anon, public_user, public_service;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, public_user, public_service;
+ALTER DEFAULT PRIVILEGES FOR ROLE public_admin IN SCHEMA public GRANT ALL ON TABLES TO postgres, anon, public_user, public_service;
+ALTER DEFAULT PRIVILEGES FOR ROLE public_admin IN SCHEMA public GRANT ALL ON FUNCTIONS TO postgres, anon, public_user, public_service;
+ALTER DEFAULT PRIVILEGES FOR ROLE public_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO postgres, anon, public_user, public_service;
 
 ALTER ROLE anon SET statement_timeout = '5s';
-ALTER ROLE user_role SET statement_timeout = '10s';
+ALTER ROLE public_user SET statement_timeout = '10s';
 
 -- https://github.com/supabase/supabase/blob/master/docker/volumes/db/init/01-auth-schema.sql
 
-CREATE SCHEMA IF NOT EXISTS "auth" AUTHORIZATION administrator;
+CREATE SCHEMA IF NOT EXISTS auth AUTHORIZATION public_admin;
 
 CREATE TABLE auth.users (
   "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
@@ -96,22 +92,21 @@ AS $$
 	)::text
 $$;
 
-GRANT USAGE ON SCHEMA auth TO anon, user_role, service_role;
+CREATE ROLE auth_admin NOINHERIT CREATEROLE LOGIN;
+ALTER ROLE auth_admin SET search_path TO auth;
 
-CREATE USER auth_administrator NOINHERIT CREATEROLE LOGIN NOREPLICATION;
+GRANT ALL PRIVILEGES ON SCHEMA auth TO auth_admin;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA auth TO auth_admin;
+GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA auth TO auth_admin;
+GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA auth TO auth_admin;
 
-GRANT ALL PRIVILEGES ON SCHEMA auth TO auth_administrator;
-GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA auth TO auth_administrator;
-GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA auth TO auth_administrator;
-GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA auth TO auth_administrator;
+ALTER TABLE auth.users OWNER TO auth_admin;
+ALTER FUNCTION auth.uid OWNER TO auth_admin;
+ALTER FUNCTION auth.role OWNER TO auth_admin;
+ALTER FUNCTION auth.email OWNER TO auth_admin;
 
-ALTER USER auth_administrator SET search_path = "auth";
+GRANT EXECUTE ON FUNCTION auth.uid() TO public;
+GRANT EXECUTE ON FUNCTION auth.role() TO public;
+GRANT EXECUTE ON FUNCTION auth.email() TO public;
 
-ALTER TABLE auth.users OWNER TO auth_administrator;
-ALTER FUNCTION auth.uid OWNER TO auth_administrator;
-ALTER FUNCTION auth.role OWNER TO auth_administrator;
-ALTER FUNCTION auth.email OWNER TO auth_administrator;
-
-GRANT EXECUTE ON FUNCTION auth.uid() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION auth.role() TO PUBLIC;
-GRANT EXECUTE ON FUNCTION auth.email() TO PUBLIC;
+GRANT USAGE ON SCHEMA auth TO anon, public_user, public_service;
