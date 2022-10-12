@@ -11,7 +11,7 @@ LABEL description="Crestfall"
 ENV LD_LIBRARY_PATH="/usr/local/lib:${PATH}"
 
 RUN apt update
-RUN apt install curl git postgresql-server-dev-14 libcurl4-openssl-dev make g++ -y
+RUN apt install curl git postgresql-server-dev-14 libcurl4-openssl-dev make g++ libkrb5-dev -y
 
 # https://github.com/pramsey/pgsql-http
 RUN curl -L https://github.com/pramsey/pgsql-http/archive/refs/tags/v1.5.0.tar.gz > ./pgsql-http.tar.gz && \
@@ -51,11 +51,18 @@ COPY ./scripts/postgresql/pgsodium/pgsodium_getkey_urandom.sh ./pgsodium_getkey_
 RUN cp ./pgsodium_getkey_urandom.sh `pg_config --sharedir`/extension/pgsodium_getkey
 RUN chmod +x `pg_config --sharedir`/extension/pgsodium_getkey
 RUN chown postgres:postgres `pg_config --sharedir`/extension/pgsodium_getkey
+
 # RUN echo $(cat ./pgsodium_getkey_urandom.sh)
 # RUN echo $(ls -l ./pgsodium_getkey_urandom.sh)
 # RUN echo $(./pgsodium_getkey_urandom.sh)
 # -c pgsodium.getkey_script=./pgsodium_getkey_urandom.sh
 # TODO: https://github.com/pgaudit/pgaudit
+
+RUN git clone https://github.com/pgaudit/pgaudit.git && \
+    cd ./pgaudit/ && \
+    git checkout REL_14_STABLE && \
+    echo $(ls -l) && \
+    make install USE_PGXS=1
 
 # TODO: https://github.com/pgbouncer/pgbouncer
 

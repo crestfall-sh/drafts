@@ -17,3 +17,5 @@ SELECT extensions.sign('{"sub":"1234567890","name":"John Doe","admin":true}', 's
 
 CREATE EXTENSION IF NOT EXISTS "pgsodium";
 SELECT * FROM pgsodium.crypto_box_new_keypair();
+
+CREATE EXTENSION IF NOT EXISTS "pgaudit";

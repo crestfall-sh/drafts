@@ -29,7 +29,7 @@ services:
     restart: "no"
     ports:
       - 5432:5432
-    command: postgres -c shared_preload_libraries=pg_cron,pgsodium
+    command: postgres -c shared_preload_libraries=pg_cron,pgsodium,pgaudit
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: ${POSTGRES_USER:?error} # postgres

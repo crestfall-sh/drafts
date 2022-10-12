@@ -15,7 +15,9 @@
     "url": "https://github.com/joshxyzhimself/crestfall/issues"
   },
   "scripts": {
-    "reinstall-modules": "npm install github:crestfall-sh/modules"
+    "reinstall-modules": "npm install github:crestfall-sh/modules",
+    "rebuild-docker": "sudo docker compose build --progress=plain",
+    "redeploy-docker": "sudo rm -rf ./volumes/ && sudo docker compose up"
   },
   "devDependencies": {
     "@types/node": "^18.8.4",
