@@ -38,6 +38,10 @@ process.nextTick(async () => {
     const payload = {
       iat: luxon.DateTime.now().toSeconds(),
       nbf: luxon.DateTime.now().toSeconds(),
+      exp: null,
+      iss: 'crestfall',
+      aud: 'crestfall',
+      sub: null,
       role: 'anon',
     };
     const token = hs256.create_token(header, payload, secret);
@@ -126,6 +130,10 @@ process.nextTick(async () => {
     const payload = {
       iat: luxon.DateTime.now().toSeconds(),
       nbf: luxon.DateTime.now().toSeconds(),
+      exp: null,
+      iss: 'crestfall',
+      aud: 'crestfall',
+      sub: null,
       role: 'auth_administrator',
     };
     const token = hs256.create_token(header, payload, secret);
@@ -209,6 +217,9 @@ process.nextTick(async () => {
       assert(typeof header_authorization_token === 'string');
 
       const verified_token = hs256.verify_token(header_authorization_token, secret);
+      assert(verified_token.payload.iss === 'crestfall');
+      assert(verified_token.payload.aud === 'crestfall');
+      assert(verified_token.payload.sub === null);
       assert(verified_token.payload.role === 'anon');
 
       // [x] ensure user does not exist
@@ -316,6 +327,9 @@ process.nextTick(async () => {
       assert(typeof header_authorization_token === 'string');
 
       const verified_token = hs256.verify_token(header_authorization_token, secret);
+      assert(verified_token.payload.iss === 'crestfall');
+      assert(verified_token.payload.aud === 'crestfall');
+      assert(verified_token.payload.sub === null);
       assert(verified_token.payload.role === 'anon');
 
       // [x] ensure user does exist
@@ -355,6 +369,9 @@ process.nextTick(async () => {
         iat: luxon.DateTime.now().toSeconds(),
         nbf: luxon.DateTime.now().toSeconds(),
         exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
+        iss: 'crestfall',
+        aud: 'crestfall',
+        sub: user.id,
         role: 'user_role',
       };
       const token = hs256.create_token(header, payload, secret);
