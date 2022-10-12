@@ -43,6 +43,7 @@ process.nextTick(async () => {
       aud: 'crestfall',
       sub: null,
       role: 'anon',
+      email: null,
     };
     const token = hs256.create_token(header, payload, secret);
     return token;
@@ -135,6 +136,7 @@ process.nextTick(async () => {
       aud: 'crestfall',
       sub: null,
       role: 'auth_admin',
+      email: null,
     };
     const token = hs256.create_token(header, payload, secret);
     return token;
@@ -373,6 +375,7 @@ process.nextTick(async () => {
         aud: 'crestfall',
         sub: user.id,
         role: 'public_user',
+        email: user.email,
       };
       const token = hs256.create_token(header, payload, secret);
 

@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import assert from 'assert';
 
-
 const env_file_path = path.join(process.cwd(), '.env');
 assert(fs.existsSync(env_file_path) === true);
 
