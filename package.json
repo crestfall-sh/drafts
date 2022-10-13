@@ -13,6 +13,9 @@
     "url": "https://github.com/joshxyzhimself/crestfall/issues"
   },
   "scripts": {
+    "studio-dev": "vite dev --config=./vite.studio.js --port=9090 --open",
+    "studio-build": "vite build --config=./vite.studio.js",
+    "studio-server": "node ./crestfall-studio/server/index.mjs",
     "reinstall-modules": "npm install github:crestfall-sh/modules",
     "core-build": "sudo docker compose build --progress=plain",
     "core-up": "sudo rm -rf ./volumes/ && sudo docker compose up"
@@ -30,6 +33,8 @@
   "dependencies": {
     "luxon": "^3.0.4",
     "modules": "github:crestfall-sh/modules",
-    "node-fetch": "^3.2.10"
+    "node-fetch": "^3.2.10",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   }
 }

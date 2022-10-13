@@ -1,7 +1,5 @@
 // @ts-check
 
-import * as uwu from 'modules/uwu.mjs';
+import fs from 'fs';
 
-process.nextTick(async () => {
-  const app = uwu.uws.App({});
-});
+console.log('Hello world!');
