@@ -3,7 +3,7 @@
 # sudo docker compose build --progress=plain
 # sudo docker compose up
 
-FROM postgres:latest
+FROM postgres:14
 
 LABEL version="0.1"
 LABEL description="Crestfall"
