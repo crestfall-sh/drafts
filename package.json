@@ -14,8 +14,8 @@
   },
   "scripts": {
     "reinstall-modules": "npm install github:crestfall-sh/modules",
-    "rebuild-docker": "sudo docker compose build --progress=plain",
-    "redeploy-docker": "sudo rm -rf ./volumes/ && sudo docker compose up"
+    "core-build": "sudo docker compose build --progress=plain",
+    "core-up": "sudo rm -rf ./volumes/ && sudo docker compose up"
   },
   "devDependencies": {
     "@types/node": "^18.8.4",

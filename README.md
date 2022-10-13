@@ -24,7 +24,7 @@ We use PostgreSQL, PostgREST, TypeSense, uWebSockets.js, Caddy
 ### Usage
 
 ```sh
-cd ./crestfall-docker/
+cd ./crestfall-core/
 sudo rm -rf ./volumes/
 sudo docker compose build --progress=plain
 sudo docker compose build --progress=plain --no-cache
