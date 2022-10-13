@@ -19,4 +19,10 @@ env_file_data.split('\n').forEach((line) => {
   env.set(key, value);
 });
 
+console.log({ env });
+
+assert(env.has('PGRST_JWT_SECRET') === true);
+assert(env.has('PGRST_JWT_SECRET_IS_BASE64') === true);
+assert(env.get('PGRST_JWT_SECRET_IS_BASE64') === 'true');
+
 export default env;

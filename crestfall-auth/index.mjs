@@ -12,16 +12,9 @@ import * as luxon from 'luxon';
 import * as uwu from 'modules/uwu.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import { full_casefold_normalize_nfkc } from 'modules/casefold.mjs';
-import env from './env.mjs';
-
-console.log({ env });
-
-assert(env.has('PGRST_JWT_SECRET') === true);
-assert(env.has('PGRST_JWT_SECRET_IS_BASE64') === true);
-assert(env.get('PGRST_JWT_SECRET_IS_BASE64') === 'true');
+import env from '../crestfall-core/env.mjs';
 
 const secret = env.get('PGRST_JWT_SECRET');
-console.log({ secret });
 
 /**
  * What's in here:
