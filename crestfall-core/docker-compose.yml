@@ -6,17 +6,17 @@
 # https://docs.docker.com/compose/compose-file/build/
 # https://docs.docker.com/compose/compose-file/compose-versioning/
 
-# Compile Crestfall Studio
+# Crestfall Studio: Production Build for Crestfall Core
 # cd ./crestfall-studio/
 # npm install
 # npm run
 
-# Launch Crestfall Core
+# Crestfall Core: Production Build
 # cd ./crestfall-core/
 # sudo docker compose up
 # sudo docker compose up --detach
 
-# Crestfall Core Commands:
+# Crestfall Core: Commands
 # sudo rm -rf ./volumes/
 # sudo docker compose up
 # sudo docker compose down
