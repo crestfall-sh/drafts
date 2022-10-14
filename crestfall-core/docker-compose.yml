@@ -6,14 +6,37 @@
 # https://docs.docker.com/compose/compose-file/build/
 # https://docs.docker.com/compose/compose-file/compose-versioning/
 
-# sudo rm -rf ./volumes/
+# Compile Crestfall Studio
+# cd ./crestfall-studio/
+# npm install
+# npm run
+
+# Launch Crestfall Core
+# cd ./crestfall-core/
 # sudo docker compose up
 # sudo docker compose up --detach
+
+# Crestfall Core Commands:
+# sudo rm -rf ./volumes/
+# sudo docker compose up
 # sudo docker compose down
 
 version: '3.8'
 
 services:
+
+  # https://hub.docker.com/_/node
+  # note: needs to change command to: node ./server/index.mjs
+  # the server-side script should serve the /dist dir
+  studio:
+    image: node:18
+    restart: "no"
+    ports:
+      - 9090:9090
+    working_dir: /usr/src/app/
+    command: npm run studio-dev
+    volumes:
+      - ../crestfall-studio/:/usr/src/app/
 
   # https://hub.docker.com/_/postgres
   # https://github.com/docker-library/docs/blob/master/postgres/README.md
@@ -37,6 +60,8 @@ services:
     volumes:
       - ./postgresql/init:/docker-entrypoint-initdb.d
       - ./volumes/postgresql/data:/var/lib/postgresql/data
+    depends_on:
+      - studio
 
   # https://hub.docker.com/r/postgrest/postgrest/
   # https://www.postgresql.org/docs/current/libpq-connect.html

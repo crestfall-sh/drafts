@@ -6,7 +6,7 @@
 FROM postgres:14
 
 LABEL version="0.1"
-LABEL description="Crestfall"
+LABEL description="crestfall-postgresql"
 
 ENV LD_LIBRARY_PATH="/usr/local/lib:${PATH}"
 
