@@ -27,8 +27,11 @@ cargo pgx stop all
 
 # compile and run extension
 cargo pgx run pg14
+```
 
-# test extension
+```sql
+-- test extension
 CREATE EXTENSION pgxsocket;
 \df pgsocket.*
+SELECT hello_pgxsocket();
 ```
