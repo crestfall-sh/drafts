@@ -1,0 +1,10 @@
+version: '3.8'
+services:
+  studio:
+    build:
+      context: .
+      dockerfile: ../crestfall-studio/Dockerfile
+    restart: "no"
+    ports:
+      - 9090:9090
+    command: node ./server/index.mjs

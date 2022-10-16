@@ -10,6 +10,4 @@ RUN npm install --omit=dev
 
 COPY ./ ./
 
-RUN npm run vite-build
-
 CMD [ "node", "./server/index.mjs" ]

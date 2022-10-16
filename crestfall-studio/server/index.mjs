@@ -4,15 +4,11 @@
  * @typedef {import('./index').user} user
  */
 
-import assert from 'assert';
-import crypto from 'crypto';
 import readline from 'node:readline/promises';
-import * as luxon from 'luxon';
 import * as uwu from 'modules/uwu.mjs';
-import * as hs256 from 'modules/hs256.mjs';
-import env from '../../crestfall-core/env.mjs';
+import env from '../env.mjs';
 
-const secret = env.get('PGRST_JWT_SECRET');
+console.log(env);
 
 /**
  * What's in here:
@@ -64,7 +60,7 @@ process.nextTick(async () => {
     response.headers.set('Access-Control-Max-Age', '300');
   }));
 
-  app.post('/test', uwu.use_middleware(async (response, request) => {
+  app.get('/test', uwu.use_middleware(async (response, request) => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
     response.json = { data: null, error: null };
     try {
@@ -79,7 +75,7 @@ process.nextTick(async () => {
   }));
 
   /**
-   * @type {import('modules/uwu').middleware}
+   * @type {import('modules/uwu.js').middleware}
    */
   const serve_404 = async (response, request) => {
     const error = { request, name: 'Not Found', code: 'ERR_NOT_FOUND', message: null, stack: null };
