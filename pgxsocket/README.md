@@ -1,5 +1,10 @@
 # pgxsocket
 
+- https://cheats.rs/
+- https://github.com/rust-lang/socket2/blob/master/tests/socket.rs
+- https://docs.rs/socket2/latest/socket2/struct.Socket.html#method.send
+- https://github.com/tcdi/pgx
+
 ## Development
 
 ```sh
