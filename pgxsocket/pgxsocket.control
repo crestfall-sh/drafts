@@ -1,0 +1,5 @@
+comment = 'pgxsocket:  Created by pgx'
+default_version = '@CARGO_VERSION@'
+module_pathname = '$libdir/pgxsocket'
+relocatable = false
+superuser = false
