@@ -16,6 +16,7 @@
     "studio-dev": "npx vite dev --host=0.0.0.0 --port=9090",
     "studio-build": "npx vite build",
     "studio-server": "node ./server/index.mjs",
+    "studio-docker-build": "sudo docker build .",
     "reinstall-modules": "npm install github:crestfall-sh/modules",
     "core-build": "sudo docker compose build --progress=plain",
     "core-up": "sudo rm -rf ./volumes/ && sudo docker compose up"
