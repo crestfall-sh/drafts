@@ -1,8 +1,13 @@
-# syntax=docker/dockerfile:1
 FROM node:18
+
 ENV NODE_ENV=production
+
 WORKDIR /app
-COPY ["package.json", "package-lock.json*", "./"]
-RUN npm install --production
-COPY . .
-CMD [ "node", "server.js" ]
+
+COPY ./ ./
+
+RUN npm install --omit=dev
+
+RUN npm run studio-build
+
+CMD [ "node", "./server/index.mjs" ]
