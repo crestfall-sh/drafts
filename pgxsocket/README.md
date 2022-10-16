@@ -27,4 +27,8 @@ cargo pgx stop all
 
 # compile and run extension
 cargo pgx run pg14
+
+# test extension
+CREATE EXTENSION pgxsocket;
+\df pgsocket.*
 ```
