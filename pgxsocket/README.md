@@ -1,6 +1,7 @@
 # pgxsocket
 
 - https://cheats.rs/
+- https://doc.rust-lang.org/book/ch01-03-hello-cargo.html
 - https://github.com/rust-lang/socket2/blob/master/tests/socket.rs
 - https://docs.rs/socket2/latest/socket2/struct.Socket.html#method.send
 - https://github.com/tcdi/pgx
