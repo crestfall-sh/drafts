@@ -6,5 +6,5 @@ services:
       dockerfile: ../crestfall-studio/Dockerfile
     restart: "no"
     ports:
-      - 9090:9090
+      - 9100:9100
     command: node ./server/index.mjs

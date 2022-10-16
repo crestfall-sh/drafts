@@ -13,8 +13,8 @@
     "url": "https://github.com/joshxyzhimself/crestfall/issues"
   },
   "scripts": {
-    "docker-build": "sudo docker build .",
-    "docker-compose-up": "sudo docker compose up",
+    "docker-build": "sudo docker compose build",
+    "docker-up": "sudo docker compose up",
     "vite-dev": "npx vite dev --host=0.0.0.0 --port=9090",
     "vite-build": "npx vite build",
     "server": "node ./server/index.mjs",

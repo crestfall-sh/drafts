@@ -26,26 +26,21 @@ version: '3.8'
 services:
 
   # https://hub.docker.com/_/node
-  studio:
-    build:
-      context: .
-      dockerfile: ../crestfall-studio/Dockerfile
-    restart: "no"
-    ports:
-      - 9090:9090
-    volumes:
-      - ../crestfall-studio/:/usr/src/app/
-    command: node ./server/index.mjs
-
   auth:
     build:
-      context: .
+      context: ../crestfall-auth/
       dockerfile: ../crestfall-auth/Dockerfile
     restart: "no"
     ports:
-      - 9091:9091
-    volumes:
-      - ../crestfall-auth/:/usr/src/app/
+      - 9090:9090
+    command: node ./server/index.mjs
+  studio:
+    build:
+      context: ../crestfall-studio/
+      dockerfile: ../crestfall-studio/Dockerfile
+    restart: "no"
+    ports:
+      - 9100:9100
     command: node ./server/index.mjs
 
   # https://hub.docker.com/_/postgres
