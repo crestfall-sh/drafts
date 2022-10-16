@@ -25,15 +25,14 @@ sudo apt install pkg-config -y
 # install and initialize
 cargo install --locked cargo-pgx
 cargo pgx init --pg14=download
-
-# create extension
-cargo pgx new --bgworker pgwebsocket
-cd ./pgwebsocket
-
-# running postgresql
 cargo pgx status all
 cargo pgx start all
 cargo pgx stop all
+
+# create extension
+cargo pgx new pgxsocket
+cargo pgx new --bgworker pgwebsocket
+cd ./pgwebsocket
 
 # compile and run extension
 cargo pgx run pg14

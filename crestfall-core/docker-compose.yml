@@ -29,7 +29,9 @@ services:
   # note: needs to change command to: node ./server/index.mjs
   # the server-side script should serve the /dist dir
   studio:
-    image: node:18
+    build:
+      context: .
+      dockerfile: ../crestfall-studio/Dockerfile
     restart: "no"
     ports:
       - 9090:9090
