@@ -3,21 +3,21 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 CREATE EXTENSION IF NOT EXISTS "pg_cron" WITH SCHEMA "extensions";
 
-CREATE TABLE auth.roles (
+CREATE TABLE public.roles (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "name" role NOT NULL
 );
 
-CREATE TYPE auth.policy_type AS ENUM ('permissive', 'restrictive');
-CREATE TABLE auth.policies (
+CREATE TYPE public.policy_type AS ENUM ('permissive', 'restrictive');
+CREATE TABLE public.policies (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "role_id" uuid REFERENCES "roles" NOT NULL,
-  "type" auth.policy_type NOT NULL,
-  "resource" text NOT NULL,
-  "scopes" text[] NOT NULL
+  "type" public.policy_type NOT NULL, -- permissive
+  "resource" text NOT NULL, -- crestfall:authorization
+  "scopes" text[] NOT NULL -- read, write, create, read, update, delete
 );
 
-CREATE TABLE auth.assignments (
+CREATE TABLE public.assignments (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "user_id" uuid REFERENCES "users" NOT NULL,
   "role_id" uuid REFERENCES "roles" NOT NULL,
@@ -25,50 +25,9 @@ CREATE TABLE auth.assignments (
   "assigned_at" timestamptz DEFAULT now() NOT NULL
 );
 
-DROP TYPE IF EXISTS "role" CASCADE;
-DROP TYPE IF EXISTS "scope" CASCADE;
-DROP TYPE IF EXISTS "action" CASCADE;
-
-DROP TABLE IF EXISTS "roles" CASCADE;
-DROP TABLE IF EXISTS "permissions" CASCADE;
-DROP TABLE IF EXISTS "user_roles" CASCADE;
-DROP TABLE IF EXISTS "profiles" CASCADE;
-
-DROP TRIGGER IF EXISTS on_auth_users_insert ON auth.users CASCADE;
-
--- You may create roles here, e.g. supervisor, operator, staff.
-CREATE TYPE "role" AS ENUM ('administrator', 'moderator');
-
--- You may create scopes here, e.g. table names.
-CREATE TYPE "scope" AS ENUM ('authentication', 'authorization', 'logs');
-
--- You may create actions here, e.g. create, read, update, delete
-CREATE TYPE "action" AS ENUM ('read', 'write');
-
-CREATE TABLE "profiles" (
-  "id" uuid REFERENCES auth.users PRIMARY KEY,
-  "email" text NOT NULL
-);
-CREATE TABLE "roles" (
-  "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-  "name" role NOT NULL
-);
-CREATE TABLE "permissions" (
-  "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-  "role_id" uuid REFERENCES "roles" ON DELETE CASCADE NOT NULL,
-  "scope" scope NOT NULL,
-  "actions" action[] NOT NULL
-);
-CREATE TABLE "user_roles" (
-  "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-  "user_id" uuid REFERENCES "profiles" ON DELETE CASCADE NOT NULL,
-  "role_id" uuid REFERENCES "roles" ON DELETE CASCADE NOT NULL
-);
-
-ALTER TABLE "roles" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "permissions" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "user_roles" ENABLE ROW LEVEL SECURITY;
-ALTER TABLE "profiles" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.policies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
 
 CREATE OR REPLACE FUNCTION is_authorized (
   param_user_id uuid,
