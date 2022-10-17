@@ -1,27 +1,28 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+CREATE EXTENSION IF NOT EXISTS "pg_cron" WITH SCHEMA "extensions";
 
-CREATE TABLE "profiles" (
-  "id" uuid REFERENCES auth.users PRIMARY KEY,
-  "email" text NOT NULL
-);
-CREATE TABLE "roles" (
+CREATE TABLE auth.roles (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "name" role NOT NULL
 );
-DROP TYPE IF EXISTS "policy_type" CASCADE;
-CREATE TYPE "policy_type" AS ENUM ('permissive', 'restrictive');
-CREATE TABLE "policies" (
+
+CREATE TYPE auth.policy_type AS ENUM ('permissive', 'restrictive');
+CREATE TABLE auth.policies (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "role_id" uuid REFERENCES "roles" NOT NULL,
-  "type" policy_type NOT NULL,
+  "type" auth.policy_type NOT NULL,
   "resource" text NOT NULL,
   "scopes" text[] NOT NULL
 );
-CREATE TABLE "assignments" (
+
+CREATE TABLE auth.assignments (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-  "email" text NOT NULL
+  "user_id" uuid REFERENCES "users" NOT NULL,
+  "role_id" uuid REFERENCES "roles" NOT NULL,
+  "assigned_by_user_id" uuid REFERENCES "users" NOT NULL,
+  "assigned_at" timestamptz DEFAULT now() NOT NULL
 );
 
 DROP TYPE IF EXISTS "role" CASCADE;
