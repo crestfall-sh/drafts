@@ -10,9 +10,14 @@ CREATE TABLE "roles" (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "name" role NOT NULL
 );
+DROP TYPE IF EXISTS "policy_type" CASCADE;
+CREATE TYPE "policy_type" AS ENUM ('permissive', 'restrictive');
 CREATE TABLE "policies" (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-  "email" text NOT NULL
+  "role_id" uuid REFERENCES "roles" NOT NULL,
+  "type" policy_type NOT NULL,
+  "resource" text NOT NULL,
+  "scopes" text[] NOT NULL
 );
 CREATE TABLE "assignments" (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
