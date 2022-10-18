@@ -40,11 +40,13 @@ CREATE OR REPLACE FUNCTION public.is_authorized (
   param_resource text,
   param_action text
 )
-RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
 AS $$
-declare
+DECLARE
   result boolean;
-begin
+BEGIN
   SELECT 1 INTO result FROM public.assignments
   WHERE public.assignments.user_id = param_user_id
   AND EXISTS (
@@ -55,10 +57,13 @@ begin
   );
   result = COALESCE(result, false);
   return result;
-end;
+END;
 $$;
 
-INSERT INTO public.users ("name") VALUES ('alice'), ('bob');
+INSERT INTO public.users ("id", "name")
+VALUES
+  ('00000000-0000-0000-0000-000000000000', 'alice'),
+  ('00000000-0000-0000-0000-000000000001', 'bob');
 
 INSERT INTO public.roles ("name")
 VALUES ('administrator'), ('moderator');
@@ -75,6 +80,11 @@ VALUES (
   (SELECT "id" FROM public.users WHERE "name" = 'alice'),
   (SELECT "id" FROM public.roles WHERE "name" = 'administrator')
 );
+INSERT INTO public.assignments ("user_id", "role_id")
+VALUES (
+  (SELECT "id" FROM public.users WHERE "name" = 'alice'),
+  (SELECT "id" FROM public.roles WHERE "name" = 'moderator')
+);
 
 SELECT * FROM public.users;
 
@@ -87,3 +97,34 @@ SELECT
   "name",
   is_authorized("id", 'crestfall:authorization', 'read') as authorization
 FROM public.users;
+
+SELECT * FROM (SELECT * FROM "assignments" WHERE "user_id" = '00000000-0000-0000-0000-000000000000') as assignments
+LEFT OUTER JOIN (SELECT * FROM "roles") as role
+ON assignments."id" = role."id";
+
+SELECT uuid_generate_v4();
+
+CREATE OR REPLACE FUNCTION asd (
+  param_user_id uuid
+)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  data jsonb;
+  result boolean;
+BEGIN
+  SELECT jsonb_agg(assignments) FROM assignments WHERE "user_id" = param_user_id INTO data;
+  RAISE INFO 'data: %', data::text;
+  -- SELECT * FROM "roles" WHERE "id" = param_user_id;
+  -- x*yz = to_jsonb();
+  return true;
+END;
+$$;
+
+SELECT asd('00000000-0000-0000-0000-000000000000');
+
+-- https://www.postgresql.org/docs/14/functions-json.html
+-- https://www.postgresql.org/docs/14/functions-aggregate.html
+-- https://www.postgresql.org/docs/14/plpgsql-errors-and-messages.html
