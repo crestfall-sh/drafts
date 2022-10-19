@@ -5,23 +5,32 @@
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- TABLE public.users
+DROP TABLE IF EXISTS public.users;
 CREATE TABLE public.users (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "email" text NOT NULL
 );
+ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
 
+-- TABLE public.roles
+DROP TABLE IF EXISTS public.roles;
 CREATE TABLE public.roles (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "name" text NOT NULL
 );
 
+-- TABLE public.permissions
+DROP TABLE IF EXISTS public.permissions;
 CREATE TABLE public.permissions (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "role_id" uuid REFERENCES public.roles NOT NULL,
   "resource" text NOT NULL, -- crestfall:authorization
   "actions" text[] NOT NULL -- read, write
 );
+ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
 
+DROP TABLE IF EXISTS public.assignments;
 CREATE TABLE public.assignments (
   "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
   "user_id" uuid REFERENCES public.users NOT NULL,
@@ -29,12 +38,9 @@ CREATE TABLE public.assignments (
   "assigned_by_user_id" uuid REFERENCES public.users DEFAULT NULL,
   "assigned_at" timestamptz DEFAULT now()
 );
-
-ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
 
--- public.is_authorized(user_id, resource, action) FUNCTION
+-- FUNCTION public.is_authorized(user_id, resource, action)
 CREATE OR REPLACE FUNCTION public.is_authorized (
   param_user_id uuid,
   param_resource text,
@@ -59,28 +65,6 @@ BEGIN
   return result;
 END;
 $$;
-
--- auth.users AFTER INSERT FUNCTION
-CREATE OR REPLACE FUNCTION auth_users_after_insert_function ()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-begin
-  INSERT INTO public.profiles ("id", "email")
-  VALUES (new.id, new.email);
-  return new;
-end;
-$$;
-
--- auth.users AFTER INSERT TRIGGER
-CREATE OR REPLACE TRIGGER auth_users_after_insert_trigger
-AFTER INSERT ON auth.users
-FOR EACH ROW EXECUTE PROCEDURE auth_users_after_insert_function();
-
--- INSERT auth.users INTO public.profiles
-INSERT INTO public.profiles
-SELECT "id", "email" FROM auth.users;
 
 -- POLICY for public.profiles SELECT
 DROP POLICY IF EXISTS profiles_select;
@@ -140,6 +124,27 @@ FOR DELETE TO authenticated USING (
   is_authorized(auth.uid(), 'crestfall:authorization', 'write') = true
 );
 
+-- FUNCTION for auth.users AFTER INSERT
+CREATE OR REPLACE FUNCTION public.auth_users_after_insert_function ()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+begin
+  INSERT INTO public.profiles ("id", "email")
+  VALUES (new.id, new.email);
+  return new;
+end;
+$$;
+
+-- TRIGGER for auth.users AFTER INSERT
+CREATE OR REPLACE TRIGGER auth_users_after_insert_trigger
+AFTER INSERT ON auth.users
+FOR EACH ROW EXECUTE PROCEDURE public.auth_users_after_insert_function();
+
+-- INSERT auth.users INTO public.profiles
+INSERT INTO public.profiles
+SELECT "id", "email" FROM auth.users;
 
 INSERT INTO public.users ("id", "email")
 VALUES
@@ -171,7 +176,8 @@ SELECT * FROM public.users;
 
 SELECT
   "email",
-  is_authorized("id", 'crestfall:profiles', 'read') as profiles_read
   is_authorized("id", 'crestfall:authentication', 'read') as authn_read
+  is_authorized("id", 'crestfall:authentication', 'write') as authn_write
   is_authorized("id", 'crestfall:authorization', 'read') as authz_read
+  is_authorized("id", 'crestfall:authorization', 'write') as authz_write
 FROM public.users;
