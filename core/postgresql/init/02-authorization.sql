@@ -3,36 +3,35 @@
 -- https://www.postgresql.org/docs/14/functions-aggregate.html
 -- https://www.postgresql.org/docs/14/plpgsql-errors-and-messages.html
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- TABLE public.users
-DROP TABLE IF EXISTS public.users;
+DROP TABLE IF EXISTS public.users CASCADE;
 CREATE TABLE public.users (
-  "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
   "email" text NOT NULL
+);
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+-- TABLE public.roles
+DROP TABLE IF EXISTS public.roles CASCADE;
+CREATE TABLE public.roles (
+  "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
+  "name" text NOT NULL
 );
 ALTER TABLE public.roles ENABLE ROW LEVEL SECURITY;
 
--- TABLE public.roles
-DROP TABLE IF EXISTS public.roles;
-CREATE TABLE public.roles (
-  "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
-  "name" text NOT NULL
-);
-
 -- TABLE public.permissions
-DROP TABLE IF EXISTS public.permissions;
+DROP TABLE IF EXISTS public.permissions CASCADE;
 CREATE TABLE public.permissions (
-  "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
   "role_id" uuid REFERENCES public.roles NOT NULL,
   "resource" text NOT NULL, -- crestfall:authorization
   "actions" text[] NOT NULL -- read, write
 );
 ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
 
-DROP TABLE IF EXISTS public.assignments;
+DROP TABLE IF EXISTS public.assignments CASCADE;
 CREATE TABLE public.assignments (
-  "id" uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+  "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
   "user_id" uuid REFERENCES public.users NOT NULL,
   "role_id" uuid REFERENCES public.roles NOT NULL,
   "assigned_by_user_id" uuid REFERENCES public.users DEFAULT NULL,
@@ -66,18 +65,18 @@ BEGIN
 END;
 $$;
 
--- POLICY for public.profiles SELECT
-DROP POLICY IF EXISTS profiles_select;
-CREATE POLICY profiles_select ON public.profiles AS PERMISSIVE
-FOR SELECT TO authenticated USING (
-  profiles.id = auth.uid()
+-- POLICY for public.users SELECT
+DROP POLICY IF EXISTS users_select ON public.users;
+CREATE POLICY users_select ON public.users AS PERMISSIVE
+FOR SELECT TO public_user USING (
+  users.id = auth.uid()
   OR is_authorized(auth.uid(), 'crestfall:authorization', 'read') = true
 );
 
 -- POLICY for public.roles SELECT
-DROP POLICY IF EXISTS roles_select;
+DROP POLICY IF EXISTS roles_select ON public.roles;
 CREATE POLICY roles_select ON public.roles AS PERMISSIVE
-FOR SELECT TO authenticated USING (
+FOR SELECT TO public_user USING (
   EXISTS (
     SELECT 1 FROM assignments
     WHERE assignments.role_id = roles.id
@@ -87,9 +86,9 @@ FOR SELECT TO authenticated USING (
 );
 
 -- POLICY for public.permissions SELECT
-DROP POLICY IF EXISTS permissions_select;
+DROP POLICY IF EXISTS permissions_select ON public.permissions;
 CREATE POLICY permissions_select ON public.permissions AS PERMISSIVE
-FOR SELECT TO authenticated USING (
+FOR SELECT TO public_user USING (
   EXISTS (
     SELECT 1 FROM roles
     WHERE roles.id = permissions.role_id
@@ -103,24 +102,24 @@ FOR SELECT TO authenticated USING (
 );
 
 -- POLICY for public.assignments SELECT
-DROP POLICY IF EXISTS assignments_select;
+DROP POLICY IF EXISTS assignments_select ON public.assignments;
 CREATE POLICY assignments_select ON public.assignments AS PERMISSIVE
-FOR SELECT TO authenticated USING (
+FOR SELECT TO public_user USING (
   assignments.user_id = auth.uid()
   OR is_authorized(auth.uid(), 'crestfall:authorization', 'read') = true
 );
 
 -- POLICY for public.assignments INSERT
-DROP POLICY IF EXISTS assignments_insert;
+DROP POLICY IF EXISTS assignments_insert ON public.assignments;
 CREATE POLICY assignments_insert ON public.assignments AS PERMISSIVE
-FOR INSERT TO authenticated WITH CHECK (
+FOR INSERT TO public_user WITH CHECK (
   is_authorized(auth.uid(), 'crestfall:authorization', 'write') = true
 );
 
 -- POLICY for public.assignments DELETE
-DROP POLICY IF EXISTS assignments_delete;
+DROP POLICY IF EXISTS assignments_delete ON public.assignments;
 CREATE POLICY assignments_delete ON public.assignments AS PERMISSIVE
-FOR DELETE TO authenticated USING (
+FOR DELETE TO public_user USING (
   is_authorized(auth.uid(), 'crestfall:authorization', 'write') = true
 );
 
@@ -131,7 +130,7 @@ LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 begin
-  INSERT INTO public.profiles ("id", "email")
+  INSERT INTO public.users ("id", "email")
   VALUES (new.id, new.email);
   return new;
 end;
@@ -142,33 +141,47 @@ CREATE OR REPLACE TRIGGER auth_users_after_insert_trigger
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE PROCEDURE public.auth_users_after_insert_function();
 
--- INSERT auth.users INTO public.profiles
-INSERT INTO public.profiles
+-- INSERT auth.users INTO public.users
+INSERT INTO public.users
 SELECT "id", "email" FROM auth.users;
 
+-- INSERT users alice@example.com, bob@example.com
 INSERT INTO public.users ("id", "email")
 VALUES
   ('00000000-0000-0000-0000-000000000000', 'alice@example.com'),
   ('00000000-0000-0000-0000-000000000001', 'bob@example.com');
 
+-- INSERT roles administrator, moderator
 INSERT INTO public.roles ("name")
 VALUES ('administrator'), ('moderator');
 
+-- INSERT permissions administrator crestfall:authorization read, write
 INSERT INTO public.permissions ("role_id", "resource", "actions")
 VALUES (
   (SELECT "id" FROM public.roles WHERE "name" = 'administrator'),
-  'crestfall:authentication',
+  'crestfall:authorization',
   ARRAY['read', 'write']::text[]
 );
 
+-- INSERT permissions moderator crestfall:authorization read
+INSERT INTO public.permissions ("role_id", "resource", "actions")
+VALUES (
+  (SELECT "id" FROM public.roles WHERE "name" = 'moderator'),
+  'crestfall:authorization',
+  ARRAY['read']::text[]
+);
+
+-- INSERT assignments alice@example.com administrator
 INSERT INTO public.assignments ("user_id", "role_id")
 VALUES (
   (SELECT "id" FROM public.users WHERE "email" = 'alice@example.com'),
   (SELECT "id" FROM public.roles WHERE "name" = 'administrator')
 );
+
+-- INSERT assignments bob@example.com administrator
 INSERT INTO public.assignments ("user_id", "role_id")
 VALUES (
-  (SELECT "id" FROM public.users WHERE "email" = 'alice@example.com'),
+  (SELECT "id" FROM public.users WHERE "email" = 'bob@example.com'),
   (SELECT "id" FROM public.roles WHERE "name" = 'moderator')
 );
 
@@ -176,8 +189,8 @@ SELECT * FROM public.users;
 
 SELECT
   "email",
-  is_authorized("id", 'crestfall:authentication', 'read') as authn_read
-  is_authorized("id", 'crestfall:authentication', 'write') as authn_write
-  is_authorized("id", 'crestfall:authorization', 'read') as authz_read
+  is_authorized("id", 'crestfall:authentication', 'read') as authn_read,
+  is_authorized("id", 'crestfall:authentication', 'write') as authn_write,
+  is_authorized("id", 'crestfall:authorization', 'read') as authz_read,
   is_authorized("id", 'crestfall:authorization', 'write') as authz_write
 FROM public.users;
