@@ -81,7 +81,7 @@ begin
 end;
 $$;
 
-CREATE TRIGGER after_insert
+CREATE OR REPLACE TRIGGER after_insert
 AFTER INSERT ON auth.users
 FOR EACH ROW EXECUTE PROCEDURE insert_profile();
 
