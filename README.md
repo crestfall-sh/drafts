@@ -7,7 +7,7 @@ Crestfall is an open-source alternative for some parts of Supabase and Firebase.
 ### Usage
 
 ```sh
-cd ./crestfall-core/
+cd ./core/
 sudo rm -rf ./volumes/
 sudo docker compose build --progress=plain
 sudo docker compose build --progress=plain --no-cache

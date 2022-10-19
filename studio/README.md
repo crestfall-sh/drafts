@@ -5,7 +5,7 @@
 #### Production Build for Crestfall Core
 
 ```sh
-cd ./crestfall-studio/
+cd ./studio/
 npm install
 npm run studio-build
 ```
@@ -13,7 +13,7 @@ npm run studio-build
 #### Development Build
 
 ```sh
-cd ./crestfall-studio/
+cd ./studio/
 npm install
 npm run studio-dev
 ```

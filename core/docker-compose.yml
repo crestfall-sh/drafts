@@ -7,11 +7,11 @@
 # https://docs.docker.com/compose/compose-file/compose-versioning/
 
 # Crestfall Studio: Production Build for Crestfall Core
-# cd ./crestfall-studio/
+# cd ./studio/
 # npm install
 
 # Crestfall Core: Production Build
-# cd ./crestfall-core/
+# cd ./core/
 # sudo docker compose --env-file ../.env up
 # sudo docker compose up
 # sudo docker compose up --detach
@@ -28,16 +28,16 @@ services:
   # https://hub.docker.com/_/node
   auth:
     build:
-      context: ../crestfall-auth/
-      dockerfile: ../crestfall-auth/Dockerfile
+      context: ../auth/
+      dockerfile: ../auth/Dockerfile
     restart: "no"
     ports:
       - 9090:9090
     command: node ./server/index.mjs
   studio:
     build:
-      context: ../crestfall-studio/
-      dockerfile: ../crestfall-studio/Dockerfile
+      context: ../studio/
+      dockerfile: ../studio/Dockerfile
     restart: "no"
     ports:
       - 9100:9100

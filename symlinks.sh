@@ -1,34 +1,34 @@
 #!/bin/bash
 set -x
 
-# crestfall-auth
-rm ./crestfall-auth/package.json
-rm ./crestfall-auth/package-lock.json
-rm ./crestfall-auth/.env
-rm -rf ./crestfall-auth/node_modules/
-ln ./package.json ./crestfall-auth/package.json
-ln ./package-lock.json ./crestfall-auth/package-lock.json
-ln ./.env ./crestfall-auth/.env
-cd ./crestfall-auth/
+# auth
+rm ./auth/package.json
+rm ./auth/package-lock.json
+rm ./auth/.env
+rm -rf ./auth/node_modules/
+ln ./package.json ./auth/package.json
+ln ./package-lock.json ./auth/package-lock.json
+ln ./.env ./auth/.env
+cd ./auth/
 npm install
 cd ../
 
-# crestfall-studio
-rm ./crestfall-studio/package.json
-rm ./crestfall-studio/package-lock.json
-rm ./crestfall-studio/.env
-rm -rf ./crestfall-studio/node_modules/
-ln ./package.json ./crestfall-studio/package.json
-ln ./package-lock.json ./crestfall-studio/package-lock.json
-ln ./.env ./crestfall-studio/.env
-cd ./crestfall-studio/
+# studio
+rm ./studio/package.json
+rm ./studio/package-lock.json
+rm ./studio/.env
+rm -rf ./studio/node_modules/
+ln ./package.json ./studio/package.json
+ln ./package-lock.json ./studio/package-lock.json
+ln ./.env ./studio/.env
+cd ./studio/
 npm install
 cd ../
 
-# crestfall-core
-rm ./crestfall-core/package.json
-rm ./crestfall-core/package-lock.json
-rm ./crestfall-core/.env
-ln ./package.json ./crestfall-core/package.json
-ln ./package-lock.json ./crestfall-core/package-lock.json
-ln ./.env ./crestfall-core/.env
+# core
+rm ./core/package.json
+rm ./core/package-lock.json
+rm ./core/.env
+ln ./package.json ./core/package.json
+ln ./package-lock.json ./core/package-lock.json
+ln ./.env ./core/.env
