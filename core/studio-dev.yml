@@ -1,0 +1,35 @@
+# sudo docker compose up -f ./studio-dev.yml
+version: '3.8'
+services:
+  postgresql:
+    build:
+      context: .
+      dockerfile: ./postgresql/Dockerfile
+    restart: "no"
+    ports:
+      - 5432:5432
+    command: postgres -c shared_preload_libraries=pg_cron,pgsodium,pgaudit
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER:?error} # postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?error} # postgres
+    volumes:
+      - ./postgresql/init:/docker-entrypoint-initdb.d
+      - ./volumes/postgresql/data:/var/lib/postgresql/data
+  postgrest:
+    image: postgrest/postgrest
+    links:
+      - postgresql:postgresql
+    ports:
+      - 5433:5433
+    environment:
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:?error} # public
+      PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:?error} # public,extensions
+      PGRST_DB_URI: postgres://${POSTGRES_USER:?error}:${POSTGRES_PASSWORD:?error}@postgresql:5432/postgres
+      PGRST_SERVER_PORT: 5433
+      PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:?error} # crestfall
+      PGRST_JWT_SECRET_IS_BASE64: ${PGRST_JWT_SECRET_IS_BASE64:?error} # true
+      PGRST_JWT_AUD: crestfall
+    depends_on:
+      - postgresql
