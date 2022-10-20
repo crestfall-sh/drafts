@@ -1,6 +1,17 @@
 #!/bin/bash
 set -x
 
+# 1. updates modules
+# 2. updates symlinks of package.json, package-lock.json, .env
+# 3. updates node_modules in /auth, /studio
+
+npm outdated
+npm update
+
+# core
+rm ./core/.env
+ln ./.env ./core/.env
+
 # auth
 rm ./auth/package.json
 rm ./auth/package-lock.json
@@ -9,9 +20,7 @@ rm -rf ./auth/node_modules/
 ln ./package.json ./auth/package.json
 ln ./package-lock.json ./auth/package-lock.json
 ln ./.env ./auth/.env
-cd ./auth/
-npm install
-cd ../
+cp -R ./node_modules/ ./auth/
 
 # studio
 rm ./studio/package.json
@@ -21,14 +30,6 @@ rm -rf ./studio/node_modules/
 ln ./package.json ./studio/package.json
 ln ./package-lock.json ./studio/package-lock.json
 ln ./.env ./studio/.env
-cd ./studio/
-npm install
-cd ../
+cp -R ./node_modules/ ./auth/
 
-# core
-rm ./core/package.json
-rm ./core/package-lock.json
-rm ./core/.env
-ln ./package.json ./core/package.json
-ln ./package-lock.json ./core/package-lock.json
-ln ./.env ./core/.env
+rm -rf ./node_modules/
