@@ -1,4 +1,7 @@
 
+# TODO: separate this into multiple compose files
+# https://docs.docker.com/engine/reference/commandline/compose/#specifying-multiple-compose-files
+
 # https://www.beekeeperstudio.io/
 # https://hoppscotch.io/
 # https://docs.docker.com/compose/reference/

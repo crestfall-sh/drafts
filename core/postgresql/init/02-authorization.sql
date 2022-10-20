@@ -185,8 +185,6 @@ VALUES (
   (SELECT "id" FROM public.roles WHERE "name" = 'moderator')
 );
 
-SELECT * FROM public.users;
-
 SELECT
   "email",
   is_authorized("id", 'crestfall.authentication', 'read') as authn_read,
@@ -195,17 +193,3 @@ SELECT
   is_authorized("id", 'crestfall.authorization', 'write') as authz_write
 FROM public.users;
 
-SELECT assignments.*, to_jsonb(role) as role
-FROM assignments
-LEFT OUTER JOIN (
-  SELECT roles.*, to_jsonb(array_agg(permissions)) as permissions
-  FROM roles
-  LEFT OUTER JOIN (SELECT * FROM permissions) as permissions
-  ON roles.id = permissions.role_id
-  GROUP BY roles.id
-) as role
-ON assignments.role_id = role.id;
-
-SELECT "role_id", array_agg(CONCAT("resource",':',array_to_string("actions",',')))
-FROM public.permissions
-GROUP BY "role_id";

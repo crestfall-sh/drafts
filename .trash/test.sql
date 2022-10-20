@@ -50,3 +50,4 @@ DO LANGUAGE plpgsql $$
     CALL track('public', 'reports');
   end;
 $$;
+

@@ -70,3 +70,22 @@ ON assignments.role_id = role.id;
 -- 1bed289c-9155-49be-b636-b271200723fc | 00000000-0000-0000-0000-000000000000 | 49c85a06-75b1-4eb8-901a-5eb7de32628b |                     | 2022-10-19 07:28:25.84665+00  | {"id": "49c85a06-75b1-4eb8-901a-5eb7de32628b", "name": "administrator", "permissions": [{"id": "e4734907-9dec-4e39-a9a0-492e00c00015", "actions": ["read", "write"], "role_id": "49c85a06-75b1-4eb8-901a-5eb7de32628b", "resource": "crestfall:authentication"}, {"id": "2526b131-e10b-4e72-8486-222d0ebc9c2f", "actions": ["read", "write"], "role_id": "49c85a06-75b1-4eb8-901a-5eb7de32628b", "resource": "crestfall:authorization"}]}
 -- 11f2ccfb-2ed2-40ec-bcd9-a36e33c1e4fb | 00000000-0000-0000-0000-000000000000 | 881c5832-94a0-4a44-aba4-49d689fe8880 |                     | 2022-10-19 07:28:25.847981+00 | {"id": "881c5832-94a0-4a44-aba4-49d689fe8880", "name": "moderator", "permissions": [{"id": "e8170ed7-b096-42a4-bf80-5db8aba9b7fb", "actions": ["read"], "role_id": "881c5832-94a0-4a44-aba4-49d689fe8880", "resource": "crestfall:authorization"}]}
 -- (2 rows)
+
+
+
+SELECT * FROM public.users;
+
+SELECT assignments.*, to_jsonb(role) as role
+FROM assignments
+LEFT OUTER JOIN (
+  SELECT roles.*, to_jsonb(array_agg(permissions)) as permissions
+  FROM roles
+  LEFT OUTER JOIN (SELECT * FROM permissions) as permissions
+  ON roles.id = permissions.role_id
+  GROUP BY roles.id
+) as role
+ON assignments.role_id = role.id;
+
+SELECT "role_id", array_agg(CONCAT("resource",':',array_to_string("actions",',')))
+FROM public.permissions
+GROUP BY "role_id";
