@@ -1,12 +1,15 @@
 #!/bin/bash
-set -x
 
-# 1. updates modules
+# 1. installs / updates modules
 # 2. updates symlinks of package.json, package-lock.json, .env
 # 3. updates node_modules in /auth, /studio
 
-npm outdated
-npm update
+if [ "$1" = "--update" ]; then
+  npm outdated
+  npm update
+else
+  npm install
+fi
 
 # core
 rm ./core/.env
@@ -30,6 +33,6 @@ rm -rf ./studio/node_modules/
 ln ./package.json ./studio/package.json
 ln ./package-lock.json ./studio/package-lock.json
 ln ./.env ./studio/.env
-cp -R ./node_modules/ ./auth/
+cp -R ./node_modules/ ./studio/
 
 rm -rf ./node_modules/
