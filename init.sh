@@ -34,5 +34,3 @@ ln ./package.json ./studio/package.json
 ln ./package-lock.json ./studio/package-lock.json
 ln ./.env ./studio/.env
 cp -R ./node_modules/ ./studio/
-
-rm -rf ./node_modules/
