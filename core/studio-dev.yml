@@ -1,14 +1,9 @@
-# sudo docker compose up -f ./studio-dev.yml
+
+# sudo docker compose --file=./studio-dev.yml build
+# sudo docker compose --file=./studio-dev.yml up
+
 version: '3.8'
 services:
-  auth:
-    build:
-      context: ../auth/
-      dockerfile: ../auth/Dockerfile
-    restart: "no"
-    ports:
-      - 9090:9090
-    command: node ./server/index.mjs
   postgresql:
     build:
       context: .
@@ -41,3 +36,15 @@ services:
       PGRST_JWT_AUD: crestfall
     depends_on:
       - postgresql
+  auth:
+    build:
+      context: ../auth/
+      dockerfile: ../auth/Dockerfile
+    restart: "no"
+    links:
+      - postgrest:postgrest
+    ports:
+      - 9090:9090
+    command: node ./server/index.mjs
+    depends_on:
+      - postgrest

@@ -219,7 +219,7 @@ process.nextTick(async () => {
 
       // [x] ensure user does not exist
       {
-        const pg_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
+        const pg_response = await fetch(`http://postgrest:5433/users?email=eq.${email}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${auth_admin_token}`,
@@ -257,7 +257,7 @@ process.nextTick(async () => {
           updated_at: undefined,
         };
 
-        const pg_response = await fetch('http://0.0.0.0:5433/users', {
+        const pg_response = await fetch('http://postgrest:5433/users', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${auth_admin_token}`,
@@ -328,7 +328,7 @@ process.nextTick(async () => {
       assert(verified_token.payload.role === 'anon');
 
       // [x] ensure user does exist
-      const pg_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
+      const pg_response = await fetch(`http://postgrest:5433/users?email=eq.${email}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${auth_admin_token}`,
