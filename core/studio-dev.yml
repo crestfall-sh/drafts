@@ -1,6 +1,14 @@
 # sudo docker compose up -f ./studio-dev.yml
 version: '3.8'
 services:
+  auth:
+    build:
+      context: ../auth/
+      dockerfile: ../auth/Dockerfile
+    restart: "no"
+    ports:
+      - 9090:9090
+    command: node ./server/index.mjs
   postgresql:
     build:
       context: .

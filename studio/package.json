@@ -15,7 +15,7 @@
   "scripts": {
     "docker-build": "sudo docker compose build",
     "docker-up": "sudo docker compose up",
-    "vite-dev": "npx vite dev --host=0.0.0.0 --port=9090",
+    "vite-dev": "npx vite dev --host=0.0.0.0 --port=9091",
     "vite-build": "npx vite build",
     "server": "node ./server/index.mjs",
     "reinstall-modules": "npm install github:crestfall-sh/modules",
