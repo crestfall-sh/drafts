@@ -6,8 +6,10 @@
  * - [ ] refresh expired tokens
  */
 
-import { assert } from 'modules/assert.mjs';
 import fetch from 'cross-fetch';
+import assert from 'modules/assert.mjs';
+import * as hs256 from 'modules/hs256.mjs';
+import * as luxon from 'luxon';
 
 export const CRESTFALL_AUTH_PORT = 9090;
 
@@ -30,6 +32,8 @@ export const initialize = (protocol, host, default_token) => {
   // [ ] token refresh check for sign-in
   const refresh_token = async () => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
+    const token = hs256.read_token(authenticated_token);
+
     const request_method = 'POST';
     const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/refresh`;
     const request_token = authenticated_token;
