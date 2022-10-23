@@ -396,6 +396,52 @@ process.nextTick(async () => {
     }
   }));
 
+  app.post('/refresh', uwu.use_middleware(async (response, request) => {
+    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
+    response.json = { data: null, error: null };
+    try {
+
+      // ensure got application/json request body
+      assert(request.json instanceof Object);
+
+      const header_authorization = request.headers.get('Authorization');
+      assert(typeof header_authorization === 'string');
+      assert(header_authorization.substring(0, 7) === 'Bearer ');
+
+      const header_authorization_token = header_authorization.substring(7);
+      assert(typeof header_authorization_token === 'string');
+
+      const verified_token = hs256.verify_token(header_authorization_token, secret);
+      assert(verified_token.payload.iss === 'crestfall');
+      assert(verified_token.payload.aud === 'crestfall');
+      assert(verified_token.payload.sub === null);
+      assert(verified_token.payload.role === 'anon');
+
+      const header = { alg: 'HS256', typ: 'JWT' };
+      const payload = {
+        iat: luxon.DateTime.now().toSeconds(),
+        nbf: luxon.DateTime.now().toSeconds(),
+        exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
+        iss: verified_token.payload.iss,
+        aud: verified_token.payload.aud,
+        sub: verified_token.payload.sub,
+        role: verified_token.payload.role,
+        email: verified_token.payload.email,
+        refresh_token: crypto.randomBytes(32).toString('hex'), // need a cached eviction of this
+      };
+      const token = hs256.create_token(header, payload, secret);
+
+      response.status = 200;
+      response.json.data = { token };
+
+    } catch (e) {
+      console.error(e);
+      const error = { request, name: e.name, code: e.code, message: e.message, stack: e.stack };
+      response.status = 500;
+      response.json.error = error;
+    }
+  }));
+
   /**
    * @type {import('modules/uwu').middleware}
    */
