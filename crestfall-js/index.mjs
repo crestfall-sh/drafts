@@ -26,9 +26,9 @@ export const initialize = (protocol, host, default_token) => {
    */
   let authenticated_token = null;
 
-  const refresh_token = async (email, password) => {
-    assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
-    assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
+  // [ ] token refresh check for sign-up
+  // [ ] token refresh check for sign-in
+  const refresh_token = async () => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     const request_method = 'POST';
     const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/refresh`;
@@ -37,7 +37,7 @@ export const initialize = (protocol, host, default_token) => {
       'Content-Type': 'application/json; charset=utf-8',
       'Authorization': `Bearer ${request_token}`,
     };
-    const request_body = JSON.stringify({ email: email, password: password });
+    const request_body = JSON.stringify({});
     const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
     assert(response.headers.has('content-type') === true);
     assert(response.headers.get('content-type').includes('application/json') === true);
@@ -121,6 +121,6 @@ export const initialize = (protocol, host, default_token) => {
     return null;
   };
 
-  const client = { sign_up, sign_in, sign_out };
+  const client = { refresh_token, sign_up, sign_in, sign_out };
   return client;
 };
