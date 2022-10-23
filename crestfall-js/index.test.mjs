@@ -55,6 +55,10 @@ process.nextTick(async () => {
     console.log(JSON.stringify({ sign_in_response }, null, 2));
   }
   {
+    const tokens = client.tokens();
+    console.log({ tokens });
+  }
+  {
     const refresh_response = await client.refresh_token();
     console.log(JSON.stringify({ refresh_response }, null, 2));
   }

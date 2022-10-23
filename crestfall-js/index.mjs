@@ -32,7 +32,7 @@ export const initialize = (protocol, host, default_token) => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     const request_method = 'POST';
     const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/refresh`;
-    const request_token = default_token;
+    const request_token = authenticated_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',
       'Authorization': `Bearer ${request_token}`,
@@ -121,6 +121,10 @@ export const initialize = (protocol, host, default_token) => {
     return null;
   };
 
-  const client = { refresh_token, sign_up, sign_in, sign_out };
+  const tokens = () => {
+    return { default_token, authenticated_token };
+  };
+
+  const client = { refresh_token, sign_up, sign_in, sign_out, tokens };
   return client;
 };
