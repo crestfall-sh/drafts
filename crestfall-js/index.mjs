@@ -2,8 +2,11 @@
 
 /**
  * TODO
- * - [ ] check token expiry
- * - [ ] refresh expired tokens
+ * - [x] check token expiry
+ * - [x] refresh expired tokens
+ * - [ ] test sql queries
+ * - [ ] test authorization (roles, permissions)
+ * - [ ] function to authorize and deauthorize
  */
 
 import fetch from 'cross-fetch';
@@ -12,6 +15,7 @@ import * as hs256 from 'modules/hs256.mjs';
 import * as luxon from 'luxon';
 
 export const CRESTFALL_AUTH_PORT = 9090;
+export const CRESTFALL_POSTGREST_PORT = 5433;
 
 /**
  * @param {string} protocol
