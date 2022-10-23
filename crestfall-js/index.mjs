@@ -28,33 +28,44 @@ export const initialize = (protocol, host, default_token) => {
    */
   let authenticated_token = null;
 
-  // [ ] token refresh check for sign-up
-  // [ ] token refresh check for sign-in
+  /**
+   * Note: not necessary for sign-in and sign-up
+   */
   const refresh_token = async () => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     const token = hs256.read_token(authenticated_token);
-
-    const request_method = 'POST';
-    const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/refresh`;
-    const request_token = authenticated_token;
-    const request_headers = {
-      'Content-Type': 'application/json; charset=utf-8',
-      'Authorization': `Bearer ${request_token}`,
-    };
-    const request_body = JSON.stringify({});
-    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
-    assert(response.headers.has('content-type') === true);
-    assert(response.headers.get('content-type').includes('application/json') === true);
-    const status = response.status;
-    const body = await response.json();
-    if (body instanceof Object) {
-      if (body.data instanceof Object) {
-        if (typeof body.data.token === 'string') {
-          authenticated_token = body.data.token;
+    assert(token instanceof Object);
+    assert(token.payload instanceof Object);
+    assert(typeof token.payload.exp === 'number');
+    const exp = luxon.DateTime.fromSeconds(token.payload.exp);
+    assert(exp.isValid === true);
+    const now = luxon.DateTime.now();
+    assert(now < exp, 'ERR_SESSION_EXPIRED');
+    const refresh_window = exp.minus({ minutes: 3 });
+    if (refresh_window < now) {
+      const request_method = 'POST';
+      const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/refresh`;
+      const request_token = authenticated_token;
+      const request_headers = {
+        'Content-Type': 'application/json; charset=utf-8',
+        'Authorization': `Bearer ${request_token}`,
+      };
+      const request_body = JSON.stringify({});
+      const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
+      assert(response.headers.has('content-type') === true);
+      assert(response.headers.get('content-type').includes('application/json') === true);
+      const status = response.status;
+      const body = await response.json();
+      if (body instanceof Object) {
+        if (body.data instanceof Object) {
+          if (typeof body.data.token === 'string') {
+            authenticated_token = body.data.token;
+          }
         }
       }
+      return { status, body };
     }
-    return { status, body };
+    return null;
   };
 
   /**
