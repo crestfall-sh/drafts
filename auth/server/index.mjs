@@ -118,6 +118,8 @@ process.nextTick(async () => {
  */
 process.nextTick(async () => {
 
+  const refresh_tokens = new Set();
+
   // non-expiring auth administrator token
   const create_auth_admin_token = () => {
     const header = { alg: 'HS256', typ: 'JWT' };
@@ -130,6 +132,7 @@ process.nextTick(async () => {
       sub: null,
       role: 'auth_admin',
       email: null,
+      refresh_token: null,
     };
     const token = hs256.create_token(header, payload, secret);
     return token;
@@ -293,8 +296,10 @@ process.nextTick(async () => {
           sub: user.id,
           role: 'public_user',
           email: user.email,
+          refresh_token: crypto.randomBytes(32).toString('hex'),
         };
         const token = hs256.create_token(header, payload, secret);
+        refresh_tokens.add(payload.refresh_token);
 
         response.status = 200;
         response.json.data = { user, token };
@@ -382,8 +387,10 @@ process.nextTick(async () => {
         sub: user.id,
         role: 'public_user',
         email: user.email,
+        refresh_token: crypto.randomBytes(32).toString('hex'),
       };
       const token = hs256.create_token(header, payload, secret);
+      refresh_tokens.add(payload.refresh_token);
 
       response.status = 200;
       response.json.data = { user, token };
@@ -414,8 +421,9 @@ process.nextTick(async () => {
       const verified_token = hs256.verify_token(header_authorization_token, secret);
       assert(verified_token.payload.iss === 'crestfall');
       assert(verified_token.payload.aud === 'crestfall');
-      assert(verified_token.payload.sub === null);
-      assert(verified_token.payload.role === 'anon');
+      assert(typeof verified_token.payload.refresh_token === 'string');
+      assert(refresh_tokens.has(verified_token.payload.refresh_token) === true);
+      refresh_tokens.delete(verified_token.payload.refresh_token);
 
       const header = { alg: 'HS256', typ: 'JWT' };
       const payload = {
@@ -427,9 +435,10 @@ process.nextTick(async () => {
         sub: verified_token.payload.sub,
         role: verified_token.payload.role,
         email: verified_token.payload.email,
-        refresh_token: crypto.randomBytes(32).toString('hex'), // need a cached eviction of this
+        refresh_token: crypto.randomBytes(32).toString('hex'),
       };
       const token = hs256.create_token(header, payload, secret);
+      refresh_tokens.add(payload.refresh_token);
 
       response.status = 200;
       response.json.data = { token };

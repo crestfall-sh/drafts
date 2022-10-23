@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.mjs",
   "scripts": {
-    "test": "node ./index.test.mjs"
+    "reinstall-modules": "npm install github:crestfall-sh/modules"
   },
   "author": "joshxyzhimself <joshxyzhimself@gmail.com>",
   "license": "MIT",
