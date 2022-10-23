@@ -54,4 +54,12 @@ process.nextTick(async () => {
     const sign_in_response = await client.sign_in('alice@gmail.com', 'test1234');
     console.log(JSON.stringify({ sign_in_response }, null, 2));
   }
+  {
+    const refresh_response = await client.refresh_token();
+    console.log(JSON.stringify({ refresh_response }, null, 2));
+  }
+  {
+    const refresh_response = await client.refresh_token();
+    console.log(JSON.stringify({ refresh_response }, null, 2));
+  }
 });
