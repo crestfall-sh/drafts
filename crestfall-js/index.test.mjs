@@ -58,6 +58,7 @@ process.nextTick(async () => {
     const tokens = client.tokens();
     console.log({ tokens });
   }
+  await new Promise((resolve) => setTimeout(resolve, (12 * 60 * 1000) + (30 * 1000)));
   {
     const refresh_response = await client.refresh_token();
     console.log(JSON.stringify({ refresh_response }, null, 2));
