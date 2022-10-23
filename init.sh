@@ -4,11 +4,12 @@
 # 2. updates symlinks of package.json, package-lock.json, .env
 # 3. updates node_modules in /auth, /studio
 
+rm -rf ./node_modules/
+npm install
+
 if [ "$1" = "--update" ]; then
   npm outdated
   npm update
-else
-  npm install
 fi
 
 # core
