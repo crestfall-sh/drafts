@@ -219,7 +219,7 @@ process.nextTick(async () => {
 
       // [x] ensure user does not exist
       {
-        const pg_response = await fetch(`http://postgrest:5433/users?email=eq.${email}`, {
+        const pg_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${auth_admin_token}`,
@@ -257,7 +257,7 @@ process.nextTick(async () => {
           updated_at: undefined,
         };
 
-        const pg_response = await fetch('http://postgrest:5433/users', {
+        const pg_response = await fetch('http://localhost:5433/users', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${auth_admin_token}`,
@@ -283,8 +283,21 @@ process.nextTick(async () => {
         user.password_salt = null;
         user.password_key = null;
 
+        const header = { alg: 'HS256', typ: 'JWT' };
+        const payload = {
+          iat: luxon.DateTime.now().toSeconds(),
+          nbf: luxon.DateTime.now().toSeconds(),
+          exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
+          iss: 'crestfall',
+          aud: 'crestfall',
+          sub: user.id,
+          role: 'public_user',
+          email: user.email,
+        };
+        const token = hs256.create_token(header, payload, secret);
+
         response.status = 200;
-        response.json.data = { user };
+        response.json.data = { user, token };
       }
     } catch (e) {
       console.error(e);
@@ -328,7 +341,7 @@ process.nextTick(async () => {
       assert(verified_token.payload.role === 'anon');
 
       // [x] ensure user does exist
-      const pg_response = await fetch(`http://postgrest:5433/users?email=eq.${email}`, {
+      const pg_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${auth_admin_token}`,

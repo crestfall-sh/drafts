@@ -36,15 +36,15 @@ services:
       PGRST_JWT_AUD: crestfall
     depends_on:
       - postgresql
-  auth:
-    build:
-      context: ../auth/
-      dockerfile: ../auth/Dockerfile
-    restart: "no"
-    links:
-      - postgrest:postgrest
-    ports:
-      - 9090:9090
-    command: node ./server/index.mjs
-    depends_on:
-      - postgrest
+  # auth:
+  #   build:
+  #     context: ../auth/
+  #     dockerfile: ../auth/Dockerfile
+  #   restart: "no"
+  #   links:
+  #     - postgrest:postgrest
+  #   ports:
+  #     - 9090:9090
+  #   command: node ./server/index.mjs
+  #   depends_on:
+  #     - postgrest

@@ -40,6 +40,18 @@ console.log({ anon_token });
 const client = crestfall.initialize('http', 'localhost', anon_token);
 
 process.nextTick(async () => {
-  const sign_in_response = await client.sign_in('alice@gmail.com', 'test');
-  console.log(JSON.stringify({ sign_in_response }, null, 2));
+  const sign_up_response = await client.sign_up('alice@gmail.com', 'test1234');
+  console.log(JSON.stringify({ sign_up_response }, null, 2));
+  {
+    const sign_in_response = await client.sign_in('alice@gmail.com', 'test1234');
+    console.log(JSON.stringify({ sign_in_response }, null, 2));
+  }
+  {
+    const sign_out_response = await client.sign_out();
+    console.log(JSON.stringify({ sign_out_response }, null, 2));
+  }
+  {
+    const sign_in_response = await client.sign_in('alice@gmail.com', 'test1234');
+    console.log(JSON.stringify({ sign_in_response }, null, 2));
+  }
 });

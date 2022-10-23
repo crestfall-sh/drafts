@@ -24,7 +24,7 @@ export const initialize = (protocol, host, default_token) => {
   /**
    * @type {string}
    */
-  const authenticated_token = null;
+  let authenticated_token = null;
 
   /**
    * @param {string} email
@@ -33,9 +33,10 @@ export const initialize = (protocol, host, default_token) => {
   const sign_up = async (email, password) => {
     assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
     assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
+    assert(authenticated_token === null, 'ERR_ALREADY_SIGNED_IN');
     const request_method = 'POST';
     const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/sign-up`;
-    const request_token = authenticated_token || default_token;
+    const request_token = default_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',
       'Authorization': `Bearer ${request_token}`,
@@ -46,6 +47,13 @@ export const initialize = (protocol, host, default_token) => {
     assert(response.headers.get('content-type').includes('application/json') === true);
     const status = response.status;
     const body = await response.json();
+    if (body instanceof Object) {
+      if (body.data instanceof Object) {
+        if (typeof body.data.token === 'string') {
+          authenticated_token = body.data.token;
+        }
+      }
+    }
     return { status, body };
   };
 
@@ -56,9 +64,10 @@ export const initialize = (protocol, host, default_token) => {
   const sign_in = async (email, password) => {
     assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
     assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
+    assert(authenticated_token === null, 'ERR_ALREADY_SIGNED_IN');
     const request_method = 'POST';
     const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/sign-in`;
-    const request_token = authenticated_token || default_token;
+    const request_token = default_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',
       'Authorization': `Bearer ${request_token}`,
@@ -69,9 +78,22 @@ export const initialize = (protocol, host, default_token) => {
     assert(response.headers.get('content-type').includes('application/json') === true);
     const status = response.status;
     const body = await response.json();
+    if (body instanceof Object) {
+      if (body.data instanceof Object) {
+        if (typeof body.data.token === 'string') {
+          authenticated_token = body.data.token;
+        }
+      }
+    }
     return { status, body };
   };
 
-  const client = { sign_up, sign_in };
+  const sign_out = async () => {
+    assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
+    authenticated_token = null;
+    return null;
+  };
+
+  const client = { sign_up, sign_in, sign_out };
   return client;
 };
