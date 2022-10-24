@@ -1,5 +1,12 @@
 // @ts-check
 
+/**
+ * @typedef {import('./index').user} user
+ * @typedef {import('./index').role} role
+ * @typedef {import('./index').permission} permission
+ * @typedef {import('./index').assignment} assignment
+ */
+
 import assert from 'assert';
 import * as crestfall from './index.mjs';
 import env from './env.mjs';
@@ -42,6 +49,31 @@ console.log({ anon_token });
  * @param {string} secret
  * @returns {string}
  */
+const create_public_admin_token = (secret) => {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = {
+    iat: luxon.DateTime.now().toSeconds(),
+    nbf: luxon.DateTime.now().toSeconds(),
+    exp: null,
+    iss: 'crestfall',
+    aud: 'crestfall',
+    sub: null,
+    role: 'public_admin',
+    email: null,
+    refresh_token: null,
+  };
+  const token = hs256.create_token(header, payload, secret);
+  return token;
+};
+
+const public_admin_token = create_public_admin_token(PGRST_JWT_SECRET);
+console.log({ public_admin_token });
+
+/**
+ * Create non-expiring auth admin token.
+ * @param {string} secret
+ * @returns {string}
+ */
 const create_auth_admin_token = (secret) => {
   const header = { alg: 'HS256', typ: 'JWT' };
   const payload = {
@@ -63,23 +95,48 @@ const auth_admin_token = create_auth_admin_token(PGRST_JWT_SECRET);
 console.log({ auth_admin_token });
 
 const client = crestfall.initialize('http', 'localhost', anon_token);
+const public_admin_client = crestfall.initialize('http', 'localhost', public_admin_token);
 
 process.nextTick(async () => {
+  {
+    const postgrest_response = await client.postgrest_request({ pathname: '/' });
+    console.log(JSON.stringify({ postgrest_response }, null, 2));
+  }
   {
     const sign_up_response = await client.sign_up('alice@gmail.com', 'test1234');
     console.log(JSON.stringify({ sign_up_response }, null, 2));
   }
   {
+
     const sign_in_response = await client.sign_in('alice@gmail.com', 'test1234');
     console.log(JSON.stringify({ sign_in_response }, null, 2));
+
+    /**
+     * @type {import('./index').postgrest_response<role[]>}
+     */
+    const roles_response = await public_admin_client.postgrest_request({
+      method: 'GET',
+      pathname: '/roles',
+    });
+    console.log(JSON.stringify({ roles_response }, null, 2));
+    const roles = roles_response.body;
+    assert(roles instanceof Array);
+    const administrator = roles.find((role) => role.name === 'administrator');
+    assert(administrator instanceof Object);
+    const moderator = roles.find((role) => role.name === 'moderator');
+    assert(moderator instanceof Object);
+    /**
+     * @type {assignment}
+     */
+    const assignment = {};
+    console.log({ assignment });
+    if (Math.random() > 0) {
+      return;
+    }
   }
   {
     const sign_out_response = await client.sign_out();
     console.log(JSON.stringify({ sign_out_response }, null, 2));
-  }
-  {
-    const postgrest_response = await client.postgrest_request({ pathname: '/' });
-    console.log(JSON.stringify({ postgrest_response }, null, 2));
   }
   {
     const sign_in_response = await client.sign_in('alice@gmail.com', 'test1234');

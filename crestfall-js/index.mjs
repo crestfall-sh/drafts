@@ -4,6 +4,7 @@
  * TODO
  * - [x] check token expiry
  * - [x] refresh expired tokens
+ * - [ ] auto-refresh tokens using setInterval
  * - [ ] test sql queries
  * - [ ] test authorization (roles, permissions)
  * - [ ] function to authorize and deauthorize
@@ -33,9 +34,37 @@ export const initialize = (protocol, host, default_token) => {
   let authenticated_token = null;
 
   /**
-   * Note: not necessary for sign-in and sign-up
+   * @type {import('./index').refresh_token}
    */
   const refresh_token = async () => {
+    assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
+    const request_method = 'POST';
+    const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/refresh`;
+    const request_token = authenticated_token;
+    const request_headers = {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Authorization': `Bearer ${request_token}`,
+    };
+    const request_body = JSON.stringify({});
+    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
+    assert(response.headers.has('content-type') === true);
+    assert(response.headers.get('content-type').includes('application/json') === true);
+    const status = response.status;
+    const body = await response.json();
+    if (body instanceof Object) {
+      if (body.data instanceof Object) {
+        if (typeof body.data.token === 'string') {
+          authenticated_token = body.data.token;
+        }
+      }
+    }
+    return { status, body };
+  };
+
+  /**
+   * Note: not necessary for sign-in and sign-up
+   */
+  const check_refresh_token = async () => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     const token = hs256.read_token(authenticated_token);
     assert(token instanceof Object);
@@ -44,37 +73,19 @@ export const initialize = (protocol, host, default_token) => {
     const exp = luxon.DateTime.fromSeconds(token.payload.exp);
     assert(exp.isValid === true);
     const now = luxon.DateTime.now();
-    assert(now < exp, 'ERR_SESSION_EXPIRED');
+    if (exp <= now) {
+      authenticated_token = null;
+      throw new Error('ERR_TOKEN_EXPIRED_ALREADY_SIGNED_OUT');
+    }
     const refresh_window = exp.minus({ minutes: 3 });
     if (refresh_window < now) {
-      const request_method = 'POST';
-      const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/refresh`;
-      const request_token = authenticated_token;
-      const request_headers = {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Authorization': `Bearer ${request_token}`,
-      };
-      const request_body = JSON.stringify({});
-      const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
-      assert(response.headers.has('content-type') === true);
-      assert(response.headers.get('content-type').includes('application/json') === true);
-      const status = response.status;
-      const body = await response.json();
-      if (body instanceof Object) {
-        if (body.data instanceof Object) {
-          if (typeof body.data.token === 'string') {
-            authenticated_token = body.data.token;
-          }
-        }
-      }
-      return { status, body };
+      await refresh_token();
     }
     return null;
   };
 
   /**
-   * @param {string} email
-   * @param {string} password
+   * @type {import('./index').sign_up}
    */
   const sign_up = async (email, password) => {
     assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
@@ -104,8 +115,7 @@ export const initialize = (protocol, host, default_token) => {
   };
 
   /**
-   * @param {string} email
-   * @param {string} password
+   * @type {import('./index').sign_in}
    */
   const sign_in = async (email, password) => {
     assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
@@ -168,7 +178,7 @@ export const initialize = (protocol, host, default_token) => {
       request_url.search = new URLSearchParams(options.search).toString();
     }
     let request_body = undefined;
-    if (request_method === 'HEAD' || request_method === 'GET') {
+    if (request_method !== 'HEAD' && request_method !== 'GET') {
       if (options.json instanceof Object) {
         request_body = JSON.stringify(options.json);
       }
@@ -186,6 +196,6 @@ export const initialize = (protocol, host, default_token) => {
     return { status, headers, body };
   };
 
-  const client = { refresh_token, sign_up, sign_in, sign_out, tokens, postgrest_request };
+  const client = { check_refresh_token, sign_up, sign_in, sign_out, tokens, postgrest_request };
   return client;
 };
