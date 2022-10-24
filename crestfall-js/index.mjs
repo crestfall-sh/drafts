@@ -4,10 +4,10 @@
  * TODO
  * - [x] check token expiry
  * - [x] refresh expired tokens
- * - [ ] auto-refresh tokens using setInterval
- * - [ ] test sql queries
- * - [ ] test authorization (roles, permissions)
+ * - [x] test postgrest queries with bearer tokens
+ * - [ ] fetch authorization (roles, permissions)
  * - [ ] function to authorize and deauthorize
+ * - [ ] auto-refresh tokens using setInterval
  */
 
 import fetch from 'cross-fetch';
