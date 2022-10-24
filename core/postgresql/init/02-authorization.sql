@@ -35,7 +35,8 @@ CREATE TABLE public.assignments (
   "user_id" uuid REFERENCES public.users NOT NULL,
   "role_id" uuid REFERENCES public.roles NOT NULL,
   "assigned_by_user_id" uuid REFERENCES public.users DEFAULT NULL,
-  "assigned_at" timestamptz DEFAULT now()
+  "assigned_at" timestamptz DEFAULT now(),
+  UNIQUE("user_id", "role_id")
 );
 ALTER TABLE public.assignments ENABLE ROW LEVEL SECURITY;
 
