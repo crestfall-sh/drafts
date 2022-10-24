@@ -37,11 +37,38 @@ const create_anon_token = (secret) => {
 const anon_token = create_anon_token(PGRST_JWT_SECRET);
 console.log({ anon_token });
 
+/**
+ * Create non-expiring auth admin token.
+ * @param {string} secret
+ * @returns {string}
+ */
+const create_auth_admin_token = (secret) => {
+  const header = { alg: 'HS256', typ: 'JWT' };
+  const payload = {
+    iat: luxon.DateTime.now().toSeconds(),
+    nbf: luxon.DateTime.now().toSeconds(),
+    exp: null,
+    iss: 'crestfall',
+    aud: 'crestfall',
+    sub: null,
+    role: 'auth_admin',
+    email: null,
+    refresh_token: null,
+  };
+  const token = hs256.create_token(header, payload, secret);
+  return token;
+};
+
+const auth_admin_token = create_auth_admin_token(PGRST_JWT_SECRET);
+console.log({ auth_admin_token });
+
 const client = crestfall.initialize('http', 'localhost', anon_token);
 
 process.nextTick(async () => {
-  const sign_up_response = await client.sign_up('alice@gmail.com', 'test1234');
-  console.log(JSON.stringify({ sign_up_response }, null, 2));
+  {
+    const sign_up_response = await client.sign_up('alice@gmail.com', 'test1234');
+    console.log(JSON.stringify({ sign_up_response }, null, 2));
+  }
   {
     const sign_in_response = await client.sign_in('alice@gmail.com', 'test1234');
     console.log(JSON.stringify({ sign_in_response }, null, 2));
