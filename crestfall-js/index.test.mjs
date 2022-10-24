@@ -51,20 +51,26 @@ process.nextTick(async () => {
     console.log(JSON.stringify({ sign_out_response }, null, 2));
   }
   {
+    const postgrest_response = await client.postgrest_request({ pathname: '/' });
+    console.log(JSON.stringify({ postgrest_response }, null, 2));
+  }
+  {
     const sign_in_response = await client.sign_in('alice@gmail.com', 'test1234');
     console.log(JSON.stringify({ sign_in_response }, null, 2));
   }
   {
+    // const tokens = client.tokens();
+    // console.log({ tokens });
+    // await new Promise((resolve) => setTimeout(resolve, (12 * 60 * 1000) + (30 * 1000)));
+    const refresh_response = await client.refresh_token();
+    console.log(JSON.stringify({ refresh_response }, null, 2));
+  }
+  {
+    const postgrest_response = await client.postgrest_request({ pathname: '/' });
+    console.log(JSON.stringify({ postgrest_response }, null, 2));
     const tokens = client.tokens();
     console.log({ tokens });
-  }
-  await new Promise((resolve) => setTimeout(resolve, (12 * 60 * 1000) + (30 * 1000)));
-  {
-    const refresh_response = await client.refresh_token();
-    console.log(JSON.stringify({ refresh_response }, null, 2));
-  }
-  {
-    const refresh_response = await client.refresh_token();
-    console.log(JSON.stringify({ refresh_response }, null, 2));
+    const authenticated_token = hs256.read_token(tokens.authenticated_token);
+    console.log({ authenticated_token });
   }
 });

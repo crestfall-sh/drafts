@@ -1,6 +1,6 @@
 
 export interface postgrest_request_options {
-  method: string;
+  method?: string;
   headers?: Record<string, string>;
   pathname: string;
   search?: Record<string, string>;

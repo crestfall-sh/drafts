@@ -149,10 +149,11 @@ export const initialize = (protocol, host, default_token) => {
    */
   const postgrest_request = async (options) => {
     assert(options instanceof Object);
-    assert(typeof options.method === 'string');
+    assert(options.method === undefined || typeof options.method === 'string');
+    assert(options.headers === undefined || options.headers instanceof Object);
     assert(typeof options.pathname === 'string');
-    assert(options.search instanceof Object);
-    const request_method = options.method;
+    assert(options.search === undefined || options.search instanceof Object);
+    const request_method = options.method || 'GET';
     const request_token = authenticated_token || default_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',
@@ -166,10 +167,19 @@ export const initialize = (protocol, host, default_token) => {
     if (options.search instanceof Object) {
       request_url.search = new URLSearchParams(options.search).toString();
     }
-    const request_body = JSON.stringify(options.json instanceof Object ? options.json : null);
-    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
+    let request_body = undefined;
+    if (request_method === 'HEAD' || request_method === 'GET') {
+      if (options.json instanceof Object) {
+        request_body = JSON.stringify(options.json);
+      }
+    }
+    const response = await fetch(request_url, {
+      method: request_method,
+      headers: request_headers,
+      body: request_body,
+    });
     assert(response.headers.has('content-type') === true);
-    assert(response.headers.get('content-type').includes('application/json') === true);
+    assert(response.headers.get('content-type').includes('application/openapi+json') === true || response.headers.get('content-type').includes('application/json') === true);
     const status = response.status;
     const headers = response.headers;
     const body = await response.json();
