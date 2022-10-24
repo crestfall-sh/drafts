@@ -8,6 +8,7 @@
  * - [ ] fetch authorization (roles, permissions)
  * - [ ] function to authorize and deauthorize
  * - [ ] auto-refresh tokens using setInterval
+ * - [ ] event emitter interface for auth state change
  */
 
 import fetch from 'cross-fetch';
