@@ -59,7 +59,8 @@ CREATE TABLE auth.users (
 	"password_key" text NOT NULL,
 	"metadata" jsonb DEFAULT NULL,
   "created_at" timestamptz DEFAULT now() NOT NULL,
-  "updated_at" timestamptz DEFAULT now() NOT NULL
+  "updated_at" timestamptz DEFAULT now() NOT NULL,
+	UNIQUE("email")
 );
 
 CREATE OR REPLACE FUNCTION auth.uid()

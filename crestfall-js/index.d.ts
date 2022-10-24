@@ -31,8 +31,8 @@ export interface assignment {
   id: string;
   user_id: string;
   role_id: string;
-  assigned_by_user_id: string;
-  assigned_at: string;
+  assigned_by_user_id?: string;
+  assigned_at?: string;
 }
 
 export interface postgrest_request_options<T> {

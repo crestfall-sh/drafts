@@ -1,6 +1,10 @@
 // @ts-check
 
 /**
+ * - https://postgrest.org/en/stable/api.html?highlight=Accept-Profile#switching-schemas
+ */
+
+/**
  * @typedef {import('./index').user} user
  */
 
@@ -226,13 +230,28 @@ process.nextTick(async () => {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${auth_admin_token}`,
-            'Accept-Profile': 'auth',
+            'Accept-Profile': 'auth', // For GET or HEAD
+            'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
           },
         });
-        assert(pg_response.status === 200);
-        const pg_response_json = await pg_response.json();
-        assert(pg_response_json instanceof Array);
-        assert(pg_response_json.length === 0, 'EMAIL_ALREADY_USED');
+
+        try {
+          assert(pg_response.status === 200);
+        } catch (e) {
+          const status = pg_response.status;
+          console.error({ status });
+          if (pg_response.headers.has('content-type') === true) {
+            if (pg_response.headers.get('content-type').includes('application/openapi+json') === true || pg_response.headers.get('content-type').includes('application/json') === true) {
+              const body = await pg_response.json();
+              console.error({ body });
+            }
+          }
+          throw e;
+        }
+
+        const pg_response_body = await pg_response.json();
+        assert(pg_response_body instanceof Array);
+        assert(pg_response_body.length === 0, 'ERR_EMAIL_ALREADY_USED');
       }
 
       // [X] create user if it does not exist
@@ -264,18 +283,32 @@ process.nextTick(async () => {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${auth_admin_token}`,
-            'Accept-Profile': 'auth',
+            'Accept-Profile': 'auth', // For GET or HEAD
+            'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
             'Content-Type': 'application/json',
             'Prefer': 'return=representation',
           },
           body: JSON.stringify(user),
         });
-        assert(pg_response.status === 201);
 
-        const pg_response_json = await pg_response.json();
-        assert(pg_response_json instanceof Array);
+        try {
+          assert(pg_response.status === 201);
+        } catch (e) {
+          const status = pg_response.status;
+          console.error({ status });
+          if (pg_response.headers.has('content-type') === true) {
+            if (pg_response.headers.get('content-type').includes('application/openapi+json') === true || pg_response.headers.get('content-type').includes('application/json') === true) {
+              const body = await pg_response.json();
+              console.error({ body });
+            }
+          }
+          throw e;
+        }
 
-        const inserted_user = pg_response_json[0];
+        const pg_response_body = await pg_response.json();
+        assert(pg_response_body instanceof Array);
+
+        const inserted_user = pg_response_body[0];
         assert(inserted_user instanceof Object);
 
         Object.assign(user, inserted_user);
@@ -350,19 +383,33 @@ process.nextTick(async () => {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${auth_admin_token}`,
-          'Accept-Profile': 'auth',
+          'Accept-Profile': 'auth', // For GET or HEAD
+          'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
         },
       });
-      assert(pg_response.status === 200);
 
-      const pg_response_json = await pg_response.json();
-      assert(pg_response_json instanceof Array);
-      assert(pg_response_json.length === 1, 'INVALID_EMAIL_OR_PASSWORD');
+      try {
+        assert(pg_response.status === 200);
+      } catch (e) {
+        const status = pg_response.status;
+        console.error({ status });
+        if (pg_response.headers.has('content-type') === true) {
+          if (pg_response.headers.get('content-type').includes('application/openapi+json') === true || pg_response.headers.get('content-type').includes('application/json') === true) {
+            const body = await pg_response.json();
+            console.error({ body });
+          }
+        }
+        throw e;
+      }
+
+      const pg_response_body = await pg_response.json();
+      assert(pg_response_body instanceof Array);
+      assert(pg_response_body.length === 1, 'ERR_INVALID_EMAIL_OR_PASSWORD');
 
       /**
        * @type {user}
        */
-      const user = pg_response_json[0];
+      const user = pg_response_body[0];
       assert(user instanceof Object);
       assert(typeof user.password_salt === 'string');
       assert(typeof user.password_key === 'string');
