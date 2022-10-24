@@ -144,6 +144,38 @@ export const initialize = (protocol, host, default_token) => {
     return { default_token, authenticated_token };
   };
 
-  const client = { refresh_token, sign_up, sign_in, sign_out, tokens };
+  /**
+   * @type {import('./index').postgrest_request}
+   */
+  const postgrest_request = async (options) => {
+    assert(options instanceof Object);
+    assert(typeof options.method === 'string');
+    assert(typeof options.pathname === 'string');
+    assert(options.search instanceof Object);
+    const request_method = options.method;
+    const request_token = authenticated_token || default_token;
+    const request_headers = {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Authorization': `Bearer ${request_token}`,
+    };
+    if (options.headers instanceof Object) {
+      Object.assign(request_headers, options.headers);
+    }
+    const request_url = new URL(`${protocol}://${host}:${CRESTFALL_POSTGREST_PORT}`);
+    request_url.pathname = options.pathname;
+    if (options.search instanceof Object) {
+      request_url.search = new URLSearchParams(options.search).toString();
+    }
+    const request_body = JSON.stringify(options.json instanceof Object ? options.json : null);
+    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
+    assert(response.headers.has('content-type') === true);
+    assert(response.headers.get('content-type').includes('application/json') === true);
+    const status = response.status;
+    const headers = response.headers;
+    const body = await response.json();
+    return { status, headers, body };
+  };
+
+  const client = { refresh_token, sign_up, sign_in, sign_out, tokens, postgrest_request };
   return client;
 };
