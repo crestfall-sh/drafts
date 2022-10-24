@@ -1,13 +1,10 @@
 {
-  "name": "crestfall-js",
-  "version": "0.0.1",
-  "description": "",
+  "name": "@crestfall-sh/client",
+  "version": "0.0.0",
   "main": "index.mjs",
   "scripts": {
     "reinstall-modules": "npm install github:crestfall-sh/modules"
   },
-  "author": "joshxyzhimself <joshxyzhimself@gmail.com>",
-  "license": "MIT",
   "dependencies": {
     "cross-fetch": "^3.1.5",
     "luxon": "^3.0.4",

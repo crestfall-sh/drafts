@@ -1,47 +1,18 @@
 {
-  "name": "crestfall",
+  "name": "@crestfall-sh/auth",
   "version": "0.0.0",
-  "description": "",
-  "author": "joshxyzhimself <joshxyzhimself@gmail.com>",
-  "license": "MIT",
-  "homepage": "https://github.com/joshxyzhimself/crestfall",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/joshxyzhimself/crestfall.git"
-  },
-  "bugs": {
-    "url": "https://github.com/joshxyzhimself/crestfall/issues"
-  },
   "scripts": {
-    "docker-build": "sudo docker compose build",
-    "docker-up": "sudo docker compose up",
-    "vite-dev": "npx vite dev --host=0.0.0.0 --port=9091",
-    "vite-build": "npx vite build",
     "server": "node ./server/index.mjs",
-    "reinstall-modules": "npm install github:crestfall-sh/modules",
-    "core-build": "sudo docker compose build --progress=plain",
-    "core-up": "sudo rm -rf ./volumes/ && sudo docker compose up"
+    "reinstall-modules": "npm install github:crestfall-sh/modules"
   },
   "devDependencies": {
     "@types/node": "^18.8.4",
     "@types/react": "^18.0.17",
-    "@types/react-dom": "^18.0.6",
-    "eslint": "^8.3.0",
-    "eslint-plugin-react": "^7.26.1",
-    "eslint-plugin-react-hooks": "^4.2.0"
+    "@types/react-dom": "^18.0.6"
   },
   "dependencies": {
-    "@fontsource/inter": "^4.5.14",
-    "@heroicons/react": "^2.0.12",
-    "@vitejs/plugin-react": "^2.0.1",
-    "autoprefixer": "^10.4.8",
     "luxon": "^3.0.4",
     "modules": "github:crestfall-sh/modules",
-    "node-fetch": "^3.2.10",
-    "postcss": "^8.4.16",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "tailwindcss": "^3.1.8",
-    "vite": "^3.0.7"
+    "node-fetch": "^3.2.10"
   }
 }
