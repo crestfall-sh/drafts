@@ -16,7 +16,7 @@ Crestfall is an open-source alternative for some parts of Firebase and Supabase.
 
 ### Avoid vendor lock-in. Seriously.
 
-- We want our users to be able to easily move their back-end infrastructure across cloud vendors, or into their own servers. Reasons may vary from better costs, better performance, or better security.
+- We want our users to be able to easily move their back-end infrastructure across cloud vendors who offer managed hosting, or into their own servers for self-hosting. We understand that reasons may vary ranging from better costs, better performance, or even better privacy and security.
 
 ### Documentation
 
