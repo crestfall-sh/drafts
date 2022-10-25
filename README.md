@@ -6,7 +6,7 @@ Crestfall is an open-source alternative for some parts of Firebase and Supabase.
 
 ### Focus on your users and your business, leave the back-end infrstructure to us.
 
-- We want you to worry about delivering value to your end-users through great products, services, and user experiences. Let Crestfall handle the rest such as Authentication, Authorization, REST API, Search API, Storage API, DNS, Web Hosting, and more.
+- We want you to worry about delivering value to your end-users through great user experiences, products, and services. Let Crestfall handle the rest such as Authentication, Authorization, REST API, Search API, Storage API, DNS, Web Hosting, and more.
 
 ### Monoliths first, microservices later.
 
