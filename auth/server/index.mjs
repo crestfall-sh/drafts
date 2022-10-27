@@ -57,8 +57,8 @@ process.nextTick(async () => {
         case '/ct': {
           const anon_token = create_anon_token();
           console.log({ anon_token });
-          const verified_token = hs256.verify_token(anon_token, secret);
-          console.log({ verified_token });
+          const request_token = hs256.verify_token(anon_token, secret);
+          console.log({ request_token });
           break;
         }
         case '/su': {
@@ -175,58 +175,30 @@ process.nextTick(async () => {
     return password_key_buffer;
   };
 
-  const app = uwu.uws.App({});
-  app.options('/*', uwu.use_middleware(async (response, request) => {
-    response.status = 204;
-    const access_control_request_method = request.headers.get('access-control-request-method');
-    const origin = request.headers.get('origin');
-    const access_control_allow_headers = ['content-type'];
-    if (request.headers.has('access-control-request-headers') === true) {
-      const access_control_request_headers = request.headers.get('access-control-request-headers').split(',');
-      access_control_allow_headers.push(...access_control_request_headers);
-    }
-    response.headers.set('Access-Control-Allow-Origin', origin);
-    response.headers.set('Access-Control-Allow-Methods', access_control_request_method);
-    response.headers.set('Access-Control-Allow-Headers', access_control_allow_headers.join(','));
-    response.headers.set('Access-Control-Max-Age', '300');
-  }));
-
-  app.post('/sign-up', uwu.use_middleware(async (response, request) => {
-    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
-    response.json = { data: null, error: null };
-    try {
-
-      // ensure got application/json request body
-      assert(request.json instanceof Object);
-
+  /**
+   * @param {string} header_authorization_token
+   * @param {string} email
+   * @param {string} password
+   */
+  const sign_up = async (header_authorization_token, email, password) => {
+    // [x] Validate request header authorization token
+    const request_token = hs256.verify_token(header_authorization_token, secret);
+    assert(request_token.payload.iss === 'crestfall');
+    assert(request_token.payload.aud === 'crestfall');
+    assert(request_token.payload.sub === null);
+    assert(request_token.payload.role === 'anon');
+    // [x] Check if email address already used
+    {
       /**
-       * @type {string}
+       * @type {import('node-fetch').Response}
        */
-      const email = full_casefold_normalize_nfkc(String(request.json.email));
-      assert(typeof email === 'string');
-
+      let postgrest_response = null;
       /**
-       * @type {string}
+       * @type {any}
        */
-      const password = String(request.json.password).normalize('NFKC');
-      assert(typeof password === 'string');
-
-      const header_authorization = request.headers.get('Authorization');
-      assert(typeof header_authorization === 'string');
-      assert(header_authorization.substring(0, 7) === 'Bearer ');
-
-      const header_authorization_token = header_authorization.substring(7);
-      assert(typeof header_authorization_token === 'string');
-
-      const verified_token = hs256.verify_token(header_authorization_token, secret);
-      assert(verified_token.payload.iss === 'crestfall');
-      assert(verified_token.payload.aud === 'crestfall');
-      assert(verified_token.payload.sub === null);
-      assert(verified_token.payload.role === 'anon');
-
-      // [x] ensure user does not exist
-      {
-        const pg_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
+      let postgrest_response_body = null;
+      try {
+        postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
           method: 'GET',
           headers: {
             'Accept': 'application/json',
@@ -235,28 +207,32 @@ process.nextTick(async () => {
             'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
           },
         });
-
-        try {
-          assert(pg_response.status === 200);
-        } catch (e) {
-          const status = pg_response.status;
-          console.error({ status });
-          if (pg_response.headers.has('content-type') === true) {
-            if (pg_response.headers.get('content-type').includes('application/json') === true) {
-              const body = await pg_response.json();
-              console.error({ body });
-            }
-          }
-          throw e;
+        assert(postgrest_response.status === 200);
+        assert(postgrest_response.headers.has('content-type') === true);
+        assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
+        postgrest_response_body = await postgrest_response.json();
+        assert(postgrest_response_body instanceof Array);
+        assert(postgrest_response_body.length === 0, 'ERR_EMAIL_ALREADY_USED');
+      } catch (e) {
+        if (postgrest_response instanceof Object) {
+          const status = postgrest_response.status;
+          const body = postgrest_response_body;
+          console.error({ status, body });
         }
-
-        const pg_response_body = await pg_response.json();
-        assert(pg_response_body instanceof Array);
-        assert(pg_response_body.length === 0, 'ERR_EMAIL_ALREADY_USED');
+        throw e;
       }
-
-      // [X] create user if it does not exist
-      {
+    }
+    // [x] Create user account and sign-in
+    {
+      /**
+       * @type {import('node-fetch').Response}
+       */
+      let postgrest_response = null;
+      /**
+       * @type {any}
+       */
+      let postgrest_response_body = null;
+      try {
         const verification_code = crypto.randomBytes(64).toString('hex');
         const password_salt = crypto.randomBytes(32).toString('hex');
         const password_key_buffer = await scrypt(password, password_salt);
@@ -279,8 +255,7 @@ process.nextTick(async () => {
           created_at: undefined,
           updated_at: undefined,
         };
-
-        const pg_response = await fetch('http://localhost:5433/users', {
+        postgrest_response = await fetch('http://localhost:5433/users', {
           method: 'POST',
           headers: {
             'Accept': 'application/json',
@@ -292,35 +267,19 @@ process.nextTick(async () => {
           },
           body: JSON.stringify(user),
         });
-
-        try {
-          assert(pg_response.status === 201);
-        } catch (e) {
-          const status = pg_response.status;
-          console.error({ status });
-          if (pg_response.headers.has('content-type') === true) {
-            if (pg_response.headers.get('content-type').includes('application/json') === true) {
-              const body = await pg_response.json();
-              console.error({ body });
-            }
-          }
-          throw e;
-        }
-
-        const pg_response_body = await pg_response.json();
-        assert(pg_response_body instanceof Array);
-
-        const inserted_user = pg_response_body[0];
+        assert(postgrest_response.status === 200);
+        assert(postgrest_response.headers.has('content-type') === true);
+        assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
+        postgrest_response_body = await postgrest_response.json();
+        assert(postgrest_response_body instanceof Array);
+        const inserted_user = postgrest_response_body[0];
         assert(inserted_user instanceof Object);
-
         Object.assign(user, inserted_user);
-
         user.invitation_code = null;
         user.verification_code = null;
         user.recovery_code = null;
         user.password_salt = null;
         user.password_key = null;
-
         const header = { alg: 'HS256', typ: 'JWT' };
         const payload = {
           iat: luxon.DateTime.now().toSeconds(),
@@ -335,13 +294,75 @@ process.nextTick(async () => {
         };
         const token = hs256.create_token(header, payload, secret);
         refresh_tokens.add(payload.refresh_token);
-
-        response.status = 200;
-        response.json.data = { user, token };
+        return { user, token };
+      } catch (e) {
+        if (postgrest_response instanceof Object) {
+          const status = postgrest_response.status;
+          const body = postgrest_response_body;
+          console.error({ status, body });
+        }
+        throw e;
       }
+    }
+  };
+
+  /**
+   * @param {string} header_authorization_token
+   * @param {string} email
+   * @param {string} password
+   */
+  const sign_in = async (header_authorization_token, email, password) => {
+    // [x] Validate request header authorization token
+    const request_token = hs256.verify_token(header_authorization_token, secret);
+    assert(request_token.payload.iss === 'crestfall');
+    assert(request_token.payload.aud === 'crestfall');
+    assert(request_token.payload.sub === null);
+    assert(request_token.payload.role === 'anon');
+  };
+
+  const app = uwu.uws.App({});
+
+  app.options('/*', uwu.use_middleware(async (response, request) => {
+    response.status = 204;
+    const access_control_request_method = request.headers.get('access-control-request-method');
+    const origin = request.headers.get('origin');
+    const access_control_allow_headers = ['content-type'];
+    if (request.headers.has('access-control-request-headers') === true) {
+      const access_control_request_headers = request.headers.get('access-control-request-headers').split(',');
+      access_control_allow_headers.push(...access_control_request_headers);
+    }
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Methods', access_control_request_method);
+    response.headers.set('Access-Control-Allow-Headers', access_control_allow_headers.join(','));
+    response.headers.set('Access-Control-Max-Age', '300');
+  }));
+
+  app.post('/sign-up', uwu.use_middleware(async (response, request) => {
+    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
+    response.json = { data: null, error: null };
+    try {
+      assert(request.json instanceof Object);
+      /**
+       * @type {string}
+       */
+      const email = full_casefold_normalize_nfkc(String(request.json.email));
+      assert(typeof email === 'string');
+      /**
+       * @type {string}
+       */
+      const password = String(request.json.password).normalize('NFKC');
+      assert(typeof password === 'string');
+      const header_authorization = request.headers.get('Authorization');
+      assert(typeof header_authorization === 'string');
+      assert(header_authorization.substring(0, 7) === 'Bearer ');
+      const header_authorization_token = header_authorization.substring(7);
+      assert(typeof header_authorization_token === 'string');
+      const { user, token } = await sign_up(header_authorization_token, email, password);
+      response.status = 200;
+      response.json.data = { user, token };
     } catch (e) {
       console.error(e);
-      const error = { request, name: e.name, code: e.code, message: e.message, stack: e.stack };
+      const error = { request, name: e.name, message: e.message, stack: e.stack };
       response.status = 500;
       response.json.error = error;
     }
@@ -374,14 +395,14 @@ process.nextTick(async () => {
       const header_authorization_token = header_authorization.substring(7);
       assert(typeof header_authorization_token === 'string');
 
-      const verified_token = hs256.verify_token(header_authorization_token, secret);
-      assert(verified_token.payload.iss === 'crestfall');
-      assert(verified_token.payload.aud === 'crestfall');
-      assert(verified_token.payload.sub === null);
-      assert(verified_token.payload.role === 'anon');
+      const request_token = hs256.verify_token(header_authorization_token, secret);
+      assert(request_token.payload.iss === 'crestfall');
+      assert(request_token.payload.aud === 'crestfall');
+      assert(request_token.payload.sub === null);
+      assert(request_token.payload.role === 'anon');
 
       // [x] ensure user does exist
-      const pg_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
+      const postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -392,27 +413,27 @@ process.nextTick(async () => {
       });
 
       try {
-        assert(pg_response.status === 200);
+        assert(postgrest_response.status === 200);
       } catch (e) {
-        const status = pg_response.status;
+        const status = postgrest_response.status;
         console.error({ status });
-        if (pg_response.headers.has('content-type') === true) {
-          if (pg_response.headers.get('content-type').includes('application/json') === true) {
-            const body = await pg_response.json();
+        if (postgrest_response.headers.has('content-type') === true) {
+          if (postgrest_response.headers.get('content-type').includes('application/json') === true) {
+            const body = await postgrest_response.json();
             console.error({ body });
           }
         }
         throw e;
       }
 
-      const pg_response_body = await pg_response.json();
-      assert(pg_response_body instanceof Array);
-      assert(pg_response_body.length === 1, 'ERR_INVALID_EMAIL_OR_PASSWORD');
+      const postgrest_response_body = await postgrest_response.json();
+      assert(postgrest_response_body instanceof Array);
+      assert(postgrest_response_body.length === 1, 'ERR_INVALID_EMAIL_OR_PASSWORD');
 
       /**
        * @type {user}
        */
-      const user = pg_response_body[0];
+      const user = postgrest_response_body[0];
       assert(user instanceof Object);
       assert(typeof user.password_salt === 'string');
       assert(typeof user.password_key === 'string');
@@ -447,7 +468,7 @@ process.nextTick(async () => {
 
     } catch (e) {
       console.error(e);
-      const error = { request, name: e.name, code: e.code, message: e.message, stack: e.stack };
+      const error = { request, name: e.name, message: e.message, stack: e.stack };
       response.status = 500;
       response.json.error = error;
     }
@@ -468,23 +489,23 @@ process.nextTick(async () => {
       const header_authorization_token = header_authorization.substring(7);
       assert(typeof header_authorization_token === 'string');
 
-      const verified_token = hs256.verify_token(header_authorization_token, secret);
-      assert(verified_token.payload.iss === 'crestfall');
-      assert(verified_token.payload.aud === 'crestfall');
-      assert(typeof verified_token.payload.refresh_token === 'string');
-      assert(refresh_tokens.has(verified_token.payload.refresh_token) === true);
-      refresh_tokens.delete(verified_token.payload.refresh_token);
+      const request_token = hs256.verify_token(header_authorization_token, secret);
+      assert(request_token.payload.iss === 'crestfall');
+      assert(request_token.payload.aud === 'crestfall');
+      assert(typeof request_token.payload.refresh_token === 'string');
+      assert(refresh_tokens.has(request_token.payload.refresh_token) === true);
+      refresh_tokens.delete(request_token.payload.refresh_token);
 
       const header = { alg: 'HS256', typ: 'JWT' };
       const payload = {
         iat: luxon.DateTime.now().toSeconds(),
         nbf: luxon.DateTime.now().toSeconds(),
         exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
-        iss: verified_token.payload.iss,
-        aud: verified_token.payload.aud,
-        sub: verified_token.payload.sub,
-        role: verified_token.payload.role,
-        email: verified_token.payload.email,
+        iss: request_token.payload.iss,
+        aud: request_token.payload.aud,
+        sub: request_token.payload.sub,
+        role: request_token.payload.role,
+        email: request_token.payload.email,
         refresh_token: crypto.randomBytes(32).toString('hex'),
       };
       const token = hs256.create_token(header, payload, secret);
@@ -495,7 +516,7 @@ process.nextTick(async () => {
 
     } catch (e) {
       console.error(e);
-      const error = { request, name: e.name, code: e.code, message: e.message, stack: e.stack };
+      const error = { request, name: e.name, message: e.message, stack: e.stack };
       response.status = 500;
       response.json.error = error;
     }
