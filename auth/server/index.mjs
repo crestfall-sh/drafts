@@ -318,6 +318,71 @@ process.nextTick(async () => {
     assert(request_token.payload.aud === 'crestfall');
     assert(request_token.payload.sub === null);
     assert(request_token.payload.role === 'anon');
+    // [x] Check if user exists
+    {
+      /**
+       * @type {import('node-fetch').Response}
+       */
+      let postgrest_response = null;
+      /**
+       * @type {any}
+       */
+      let postgrest_response_body = null;
+      try {
+        postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${auth_admin_token}`,
+            'Accept-Profile': 'auth', // For GET or HEAD
+            'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
+          },
+        });
+        assert(postgrest_response.status === 200);
+        assert(postgrest_response.headers.has('content-type') === true);
+        assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
+        postgrest_response_body = await postgrest_response.json();
+        assert(postgrest_response_body instanceof Array);
+        assert(postgrest_response_body.length === 1, 'ERR_INVALID_EMAIL_OR_PASSWORD');
+        /**
+         * @type {user}
+         */
+        const user = postgrest_response_body[0];
+        assert(user instanceof Object);
+        assert(typeof user.password_salt === 'string');
+        assert(typeof user.password_key === 'string');
+        const user_password_key_buffer = Buffer.from(user.password_key, 'hex');
+        const password_key_buffer = await scrypt(password, user.password_salt);
+        assert(crypto.timingSafeEqual(user_password_key_buffer, password_key_buffer) === true, 'INVALID_EMAIL_OR_PASSWORD');
+        user.invitation_code = null;
+        user.verification_code = null;
+        user.recovery_code = null;
+        user.password_salt = null;
+        user.password_key = null;
+        const header = { alg: 'HS256', typ: 'JWT' };
+        const payload = {
+          iat: luxon.DateTime.now().toSeconds(),
+          nbf: luxon.DateTime.now().toSeconds(),
+          exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
+          iss: 'crestfall',
+          aud: 'crestfall',
+          sub: user.id,
+          role: 'public_user',
+          email: user.email,
+          refresh_token: crypto.randomBytes(32).toString('hex'),
+        };
+        const token = hs256.create_token(header, payload, secret);
+        refresh_tokens.add(payload.refresh_token);
+        return { user, token };
+      } catch (e) {
+        if (postgrest_response instanceof Object) {
+          const status = postgrest_response.status;
+          const body = postgrest_response_body;
+          console.error({ status, body });
+        }
+        throw e;
+      }
+    }
   };
 
   const app = uwu.uws.App({});
@@ -372,100 +437,25 @@ process.nextTick(async () => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
     response.json = { data: null, error: null };
     try {
-
-      // ensure got application/json request body
       assert(request.json instanceof Object);
-
       /**
        * @type {string}
        */
       const email = full_casefold_normalize_nfkc(String(request.json.email));
       assert(typeof email === 'string');
-
       /**
        * @type {string}
        */
       const password = String(request.json.password).normalize('NFKC');
       assert(typeof password === 'string');
-
       const header_authorization = request.headers.get('Authorization');
       assert(typeof header_authorization === 'string');
       assert(header_authorization.substring(0, 7) === 'Bearer ');
-
       const header_authorization_token = header_authorization.substring(7);
       assert(typeof header_authorization_token === 'string');
-
-      const request_token = hs256.verify_token(header_authorization_token, secret);
-      assert(request_token.payload.iss === 'crestfall');
-      assert(request_token.payload.aud === 'crestfall');
-      assert(request_token.payload.sub === null);
-      assert(request_token.payload.role === 'anon');
-
-      // [x] ensure user does exist
-      const postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${auth_admin_token}`,
-          'Accept-Profile': 'auth', // For GET or HEAD
-          'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
-        },
-      });
-
-      try {
-        assert(postgrest_response.status === 200);
-      } catch (e) {
-        const status = postgrest_response.status;
-        console.error({ status });
-        if (postgrest_response.headers.has('content-type') === true) {
-          if (postgrest_response.headers.get('content-type').includes('application/json') === true) {
-            const body = await postgrest_response.json();
-            console.error({ body });
-          }
-        }
-        throw e;
-      }
-
-      const postgrest_response_body = await postgrest_response.json();
-      assert(postgrest_response_body instanceof Array);
-      assert(postgrest_response_body.length === 1, 'ERR_INVALID_EMAIL_OR_PASSWORD');
-
-      /**
-       * @type {user}
-       */
-      const user = postgrest_response_body[0];
-      assert(user instanceof Object);
-      assert(typeof user.password_salt === 'string');
-      assert(typeof user.password_key === 'string');
-
-      const user_password_key_buffer = Buffer.from(user.password_key, 'hex');
-      const password_key_buffer = await scrypt(password, user.password_salt);
-      assert(crypto.timingSafeEqual(user_password_key_buffer, password_key_buffer) === true, 'INVALID_EMAIL_OR_PASSWORD');
-
-      user.invitation_code = null;
-      user.verification_code = null;
-      user.recovery_code = null;
-      user.password_salt = null;
-      user.password_key = null;
-
-      const header = { alg: 'HS256', typ: 'JWT' };
-      const payload = {
-        iat: luxon.DateTime.now().toSeconds(),
-        nbf: luxon.DateTime.now().toSeconds(),
-        exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
-        iss: 'crestfall',
-        aud: 'crestfall',
-        sub: user.id,
-        role: 'public_user',
-        email: user.email,
-        refresh_token: crypto.randomBytes(32).toString('hex'),
-      };
-      const token = hs256.create_token(header, payload, secret);
-      refresh_tokens.add(payload.refresh_token);
-
+      const { user, token } = await sign_in(header_authorization_token, email, password);
       response.status = 200;
       response.json.data = { user, token };
-
     } catch (e) {
       console.error(e);
       const error = { request, name: e.name, message: e.message, stack: e.stack };
@@ -478,24 +468,18 @@ process.nextTick(async () => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
     response.json = { data: null, error: null };
     try {
-
-      // ensure got application/json request body
       assert(request.json instanceof Object);
-
       const header_authorization = request.headers.get('Authorization');
       assert(typeof header_authorization === 'string');
       assert(header_authorization.substring(0, 7) === 'Bearer ');
-
       const header_authorization_token = header_authorization.substring(7);
       assert(typeof header_authorization_token === 'string');
-
       const request_token = hs256.verify_token(header_authorization_token, secret);
       assert(request_token.payload.iss === 'crestfall');
       assert(request_token.payload.aud === 'crestfall');
       assert(typeof request_token.payload.refresh_token === 'string');
       assert(refresh_tokens.has(request_token.payload.refresh_token) === true);
       refresh_tokens.delete(request_token.payload.refresh_token);
-
       const header = { alg: 'HS256', typ: 'JWT' };
       const payload = {
         iat: luxon.DateTime.now().toSeconds(),
@@ -510,10 +494,8 @@ process.nextTick(async () => {
       };
       const token = hs256.create_token(header, payload, secret);
       refresh_tokens.add(payload.refresh_token);
-
       response.status = 200;
       response.json.data = { token };
-
     } catch (e) {
       console.error(e);
       const error = { request, name: e.name, message: e.message, stack: e.stack };
