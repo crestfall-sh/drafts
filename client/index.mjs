@@ -167,6 +167,7 @@ export const initialize = (protocol, host, default_token) => {
     const request_method = options.method || 'GET';
     const request_token = authenticated_token || default_token;
     const request_headers = {
+      'Accept': 'application/json',
       'Content-Type': 'application/json; charset=utf-8',
       'Authorization': `Bearer ${request_token}`,
     };
@@ -190,7 +191,7 @@ export const initialize = (protocol, host, default_token) => {
       body: request_body,
     });
     assert(response.headers.has('content-type') === true);
-    assert(response.headers.get('content-type').includes('application/openapi+json') === true || response.headers.get('content-type').includes('application/json') === true);
+    assert(response.headers.get('content-type').includes('application/json') === true);
     const status = response.status;
     const headers = response.headers;
     const body = await response.json();

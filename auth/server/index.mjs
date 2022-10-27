@@ -229,6 +229,7 @@ process.nextTick(async () => {
         const pg_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
           method: 'GET',
           headers: {
+            'Accept': 'application/json',
             'Authorization': `Bearer ${auth_admin_token}`,
             'Accept-Profile': 'auth', // For GET or HEAD
             'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
@@ -241,7 +242,7 @@ process.nextTick(async () => {
           const status = pg_response.status;
           console.error({ status });
           if (pg_response.headers.has('content-type') === true) {
-            if (pg_response.headers.get('content-type').includes('application/openapi+json') === true || pg_response.headers.get('content-type').includes('application/json') === true) {
+            if (pg_response.headers.get('content-type').includes('application/json') === true) {
               const body = await pg_response.json();
               console.error({ body });
             }
@@ -282,6 +283,7 @@ process.nextTick(async () => {
         const pg_response = await fetch('http://localhost:5433/users', {
           method: 'POST',
           headers: {
+            'Accept': 'application/json',
             'Authorization': `Bearer ${auth_admin_token}`,
             'Accept-Profile': 'auth', // For GET or HEAD
             'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
@@ -297,7 +299,7 @@ process.nextTick(async () => {
           const status = pg_response.status;
           console.error({ status });
           if (pg_response.headers.has('content-type') === true) {
-            if (pg_response.headers.get('content-type').includes('application/openapi+json') === true || pg_response.headers.get('content-type').includes('application/json') === true) {
+            if (pg_response.headers.get('content-type').includes('application/json') === true) {
               const body = await pg_response.json();
               console.error({ body });
             }
@@ -382,6 +384,7 @@ process.nextTick(async () => {
       const pg_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
         method: 'GET',
         headers: {
+          'Accept': 'application/json',
           'Authorization': `Bearer ${auth_admin_token}`,
           'Accept-Profile': 'auth', // For GET or HEAD
           'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
@@ -394,7 +397,7 @@ process.nextTick(async () => {
         const status = pg_response.status;
         console.error({ status });
         if (pg_response.headers.has('content-type') === true) {
-          if (pg_response.headers.get('content-type').includes('application/openapi+json') === true || pg_response.headers.get('content-type').includes('application/json') === true) {
+          if (pg_response.headers.get('content-type').includes('application/json') === true) {
             const body = await pg_response.json();
             console.error({ body });
           }
