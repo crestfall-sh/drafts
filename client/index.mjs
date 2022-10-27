@@ -190,8 +190,9 @@ export const initialize = (protocol, host, default_token) => {
       headers: request_headers,
       body: request_body,
     });
+    console.log(response.headers);
     assert(response.headers.has('content-type') === true);
-    assert(response.headers.get('content-type').includes('application/json') === true);
+    assert(response.headers.get('content-type').includes('application/json') === true || response.headers.get('content-type').includes('application/openapi+json') === true);
     const status = response.status;
     const headers = response.headers;
     const body = await response.json();
