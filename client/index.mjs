@@ -170,6 +170,8 @@ export const initialize = (protocol, host, default_token) => {
       'Accept': 'application/json',
       'Content-Type': 'application/json; charset=utf-8',
       'Authorization': `Bearer ${request_token}`,
+      'Accept-Profile': 'public', // For GET or HEAD
+      'Content-Profile': 'public', // For POST, PATCH, PUT and DELETE
     };
     if (options.headers instanceof Object) {
       Object.assign(request_headers, options.headers);
