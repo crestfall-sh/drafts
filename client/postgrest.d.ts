@@ -1,6 +1,7 @@
 export interface request_options<T> {
   protocol: string;
   host: string;
+  port: number;
   token: string;
   method?: string;
   headers?: Record<string, string>;

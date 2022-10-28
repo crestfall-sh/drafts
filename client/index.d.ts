@@ -15,16 +15,17 @@ export interface user {
   updated_at: string;
 }
 
-export interface role {
-  id: string;
-  name: string;
-}
-
 export interface permission {
   id: string;
   role_id: string;
   resource: string;
   actions: string[];
+}
+
+export interface role {
+  id: string;
+  name: string;
+  permissions?: permission[];
 }
 
 export interface assignment {
@@ -33,6 +34,7 @@ export interface assignment {
   role_id: string;
   assigned_by_user_id?: string;
   assigned_at?: string;
+  role?: role;
 }
 
 export interface sign_up_response {

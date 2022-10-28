@@ -1,9 +1,13 @@
 // @ts-check
 
+/**
+ * @typedef {import('./index').permission} permission
+ * @typedef {import('./index').role} role
+ * @typedef {import('./index').assignment} assignment
+ */
+
 import fetch from 'cross-fetch';
 import assert from 'modules/assert.mjs';
-
-export const CRESTFALL_POSTGREST_PORT = 5433;
 
 /**
  * Note: used in browser and nodejs.
@@ -13,6 +17,7 @@ export const request = async (options) => {
   assert(options instanceof Object);
   assert(typeof options.protocol === 'string');
   assert(typeof options.host === 'string');
+  assert(typeof options.port === 'number');
   assert(typeof options.token === 'string');
   assert(options.method === undefined || typeof options.method === 'string');
   assert(options.headers === undefined || options.headers instanceof Object);
@@ -30,7 +35,7 @@ export const request = async (options) => {
   if (options.headers instanceof Object) {
     Object.assign(request_headers, options.headers);
   }
-  const request_url = new URL(`${options.protocol}://${options.host}:${CRESTFALL_POSTGREST_PORT}`);
+  const request_url = new URL(`${options.protocol}://${options.host}:${options.port}`);
   request_url.pathname = options.pathname;
   if (options.search instanceof Object) {
     request_url.search = new URLSearchParams(options.search).toString();
@@ -52,4 +57,53 @@ export const request = async (options) => {
   const headers = response.headers;
   const body = await response.json();
   return { status, headers, body };
+};
+
+/**
+ * @param {string} protocol
+ * @param {string} host
+ * @param {number} port
+ * @param {string} token
+ * @param {string} user_id
+ * @returns {Promise<string[]>}
+ */
+export const read_authorization_scopes = async (protocol, host, port, token, user_id) => {
+  assert(typeof protocol === 'string');
+  assert(typeof host === 'string');
+  assert(typeof port === 'number');
+  assert(typeof token === 'string');
+  assert(typeof user_id === 'string' || user_id === null);
+  const method = 'GET';
+  const pathname = '/assignments';
+  /**
+   * @type {Record<string, string>}
+   */
+  const search = {
+    select: '*,role:roles(*,permissions:permissions(*))',
+  };
+  if (typeof user_id === 'string') {
+    search.user_id = `eq.${user_id}`;
+  }
+  /**
+   * @type {import('./postgrest').response<assignment[]>}
+   */
+  const response = await request({ protocol, host, port, token, method, pathname, search });
+  assert(response.status === 200);
+  assert(response.body instanceof Array);
+  const scopes = new Set();
+  const assignments = response.body;
+  assignments.forEach((assignment) => {
+    assert(assignment instanceof Object);
+    assert(assignment.role instanceof Object);
+    assert(assignment.role.permissions instanceof Array);
+    assignment.role.permissions.forEach((permission) => {
+      assert(permission instanceof Object);
+      assert(permission.actions instanceof Array);
+      permission.actions.forEach((action) => {
+        const scope = permission.resource.concat(':', action);
+        scopes.add(scope);
+      });
+    });
+  });
+  return Array.from(scopes);
 };

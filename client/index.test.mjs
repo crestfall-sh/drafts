@@ -96,13 +96,13 @@ const auth_admin_token = create_auth_admin_token(PGRST_JWT_SECRET);
 console.log({ auth_admin_token });
 
 const client = crestfall.initialize('http', 'localhost', anon_token);
-const public_admin_client = crestfall.initialize('http', 'localhost', public_admin_token);
 
 process.nextTick(async () => {
   {
     const postgrest_response = await postgrest.request({
       protocol: 'http',
       host: '0.0.0.0',
+      port: 5433,
       token: anon_token,
       pathname: '/',
     });
@@ -123,11 +123,12 @@ process.nextTick(async () => {
     assert(sign_in_response.status === 200);
 
     /**
-     * @type {import('./index').postgrest_response<role[]>}
+     * @type {import('./postgrest').response<role[]>}
      */
     const roles_response = await postgrest.request({
       protocol: 'http',
       host: '0.0.0.0',
+      port: 5433,
       token: public_admin_token,
       method: 'GET',
       pathname: '/roles',
@@ -156,6 +157,7 @@ process.nextTick(async () => {
     const assignment_response = await postgrest.request({
       protocol: 'http',
       host: '0.0.0.0',
+      port: 5433,
       token: public_admin_token,
       method: 'POST',
       headers: { 'Prefer': 'return=representation' },
@@ -179,6 +181,7 @@ process.nextTick(async () => {
     const postgrest_response = await postgrest.request({
       protocol: 'http',
       host: '0.0.0.0',
+      port: 5433,
       token: anon_token,
       pathname: '/',
     });
@@ -187,5 +190,12 @@ process.nextTick(async () => {
     console.log({ tokens });
     const authenticated_token = hs256.read_token(tokens.authenticated_token);
     console.log({ authenticated_token });
+  }
+  {
+    const authenticated_token = client.tokens().authenticated_token;
+    const authenticated_token_data = hs256.read_token(authenticated_token);
+    console.log({ authenticated_token_data });
+    const authorization_scopes = await postgrest.read_authorization_scopes('http', '0.0.0.0', 5433, authenticated_token, null);
+    console.log(JSON.stringify({ authorization_scopes }, null, 2));
   }
 });
