@@ -18,7 +18,261 @@ import * as hs256 from 'modules/hs256.mjs';
 import { full_casefold_normalize_nfkc } from 'modules/casefold.mjs';
 import env from '../env.mjs';
 
-const secret = env.get('PGRST_JWT_SECRET');
+const scrypt_length = 64;
+
+/**
+ * - https://words.filippo.io/the-scrypt-parameters/
+ * @type {import('crypto').ScryptOptions}
+ */
+const scrypt_options = { N: 2 ** 15, p: 1, maxmem: 128 * (2 ** 16) * 8 };
+
+/**
+ * @param {string} password utf-8 nfkc
+ * @param {string} password_salt hex-encoded
+ * @returns {Promise<Buffer>}
+ */
+const scrypt = async (password, password_salt) => {
+  assert(typeof password === 'string');
+  assert(typeof password_salt === 'string');
+  /**
+   * @type {Buffer}
+   */
+  const password_key_buffer = await new Promise((resolve, reject) => {
+    crypto.scrypt(Buffer.from(password), Buffer.from(password_salt, 'hex'), scrypt_length, scrypt_options, (error, derived_key) => {
+      if (error instanceof Error) {
+        reject(error);
+        return;
+      }
+      resolve(derived_key);
+    });
+  });
+  return password_key_buffer;
+};
+
+const refresh_tokens = new Set();
+
+/**
+ * @param {string} sub
+ * @param {string} role
+ * @param {string} email
+ * @param {string} secret_b64
+ * @returns {string}
+ */
+const create_token = (sub, role, email, secret_b64) => {
+  assert(typeof sub === 'string' || sub === null);
+  assert(typeof role === 'string' || role === null);
+  assert(typeof email === 'string' || email === null);
+  assert(typeof secret_b64 === 'string');
+  /**
+   * @type {import('modules/hs256').header}
+   */
+  const header = { alg: 'HS256', typ: 'JWT' };
+  /**
+   * @type {import('modules/hs256').payload}
+   */
+  const payload = {
+    iat: luxon.DateTime.now().toSeconds(),
+    nbf: luxon.DateTime.now().toSeconds(),
+    exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
+    iss: 'crestfall',
+    aud: 'crestfall',
+    sub: sub,
+    role: role,
+    email: email,
+    refresh_token: crypto.randomBytes(32).toString('hex'),
+  };
+  const token = hs256.create_token(header, payload, secret_b64);
+  refresh_tokens.add(payload.refresh_token);
+  return token;
+};
+
+const secret_b64 = env.get('PGRST_JWT_SECRET');
+
+const auth_admin_token = create_token(null, 'auth_admin', null, secret_b64);
+
+/**
+ * @param {string} header_authorization_token
+ * @param {string} email
+ * @param {string} password
+ */
+const sign_up = async (header_authorization_token, email, password) => {
+  // [x] Validate request header authorization token
+  const request_token = hs256.verify_token(header_authorization_token, secret_b64);
+  assert(request_token.payload.iss === 'crestfall');
+  assert(request_token.payload.aud === 'crestfall');
+  assert(request_token.payload.sub === null);
+  assert(request_token.payload.role === 'anon');
+  // [x] Check if email address already used
+  {
+    /**
+     * @type {import('node-fetch').Response}
+     */
+    let postgrest_response = null;
+    /**
+     * @type {any}
+     */
+    let postgrest_response_body = null;
+    try {
+      postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${auth_admin_token}`,
+          'Accept-Profile': 'auth', // For GET or HEAD
+          'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
+        },
+      });
+      assert(postgrest_response.status === 200);
+      assert(postgrest_response.headers.has('content-type') === true);
+      assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
+      postgrest_response_body = await postgrest_response.json();
+      assert(postgrest_response_body instanceof Array);
+      assert(postgrest_response_body.length === 0, 'ERR_EMAIL_ALREADY_USED');
+    } catch (e) {
+      if (postgrest_response instanceof Object) {
+        const status = postgrest_response.status;
+        const body = postgrest_response_body;
+        console.error({ status, body });
+      }
+      throw e;
+    }
+  }
+  // [x] Create user account and sign-in
+  {
+    /**
+     * @type {import('node-fetch').Response}
+     */
+    let postgrest_response = null;
+    /**
+     * @type {any}
+     */
+    let postgrest_response_body = null;
+    try {
+      const verification_code = crypto.randomBytes(64).toString('hex');
+      const password_salt = crypto.randomBytes(32).toString('hex');
+      const password_key_buffer = await scrypt(password, password_salt);
+      const password_key = password_key_buffer.toString('hex');
+      /**
+       * @type {user}
+       */
+      const user = {
+        id: undefined,
+        email: email,
+        invitation_code: null,
+        invited_at: null,
+        verification_code: verification_code,
+        verified_at: null,
+        recovery_code: null,
+        recovered_at: null,
+        password_salt: password_salt,
+        password_key: password_key,
+        metadata: {},
+        created_at: undefined,
+        updated_at: undefined,
+      };
+      postgrest_response = await fetch('http://localhost:5433/users', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${auth_admin_token}`,
+          'Accept-Profile': 'auth', // For GET or HEAD
+          'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
+          'Content-Type': 'application/json',
+          'Prefer': 'return=representation',
+        },
+        body: JSON.stringify(user),
+      });
+      assert(postgrest_response.status === 200);
+      assert(postgrest_response.headers.has('content-type') === true);
+      assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
+      postgrest_response_body = await postgrest_response.json();
+      assert(postgrest_response_body instanceof Array);
+      const inserted_user = postgrest_response_body[0];
+      assert(inserted_user instanceof Object);
+      Object.assign(user, inserted_user);
+      user.invitation_code = null;
+      user.verification_code = null;
+      user.recovery_code = null;
+      user.password_salt = null;
+      user.password_key = null;
+      const token = create_token(user.id, 'public_user', user.email, secret_b64);
+      return { user, token };
+    } catch (e) {
+      if (postgrest_response instanceof Object) {
+        const status = postgrest_response.status;
+        const body = postgrest_response_body;
+        console.error({ status, body });
+      }
+      throw e;
+    }
+  }
+};
+
+/**
+ * @param {string} header_authorization_token
+ * @param {string} email
+ * @param {string} password
+ */
+const sign_in = async (header_authorization_token, email, password) => {
+  // [x] Validate request header authorization token
+  const request_token = hs256.verify_token(header_authorization_token, secret_b64);
+  assert(request_token.payload.iss === 'crestfall');
+  assert(request_token.payload.aud === 'crestfall');
+  assert(request_token.payload.sub === null);
+  assert(request_token.payload.role === 'anon');
+  // [x] Check if user exists
+  {
+    /**
+     * @type {import('node-fetch').Response}
+     */
+    let postgrest_response = null;
+    /**
+     * @type {any}
+     */
+    let postgrest_response_body = null;
+    try {
+      postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${auth_admin_token}`,
+          'Accept-Profile': 'auth', // For GET or HEAD
+          'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
+        },
+      });
+      assert(postgrest_response.status === 200);
+      assert(postgrest_response.headers.has('content-type') === true);
+      assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
+      postgrest_response_body = await postgrest_response.json();
+      assert(postgrest_response_body instanceof Array);
+      assert(postgrest_response_body.length === 1, 'ERR_INVALID_EMAIL_OR_PASSWORD');
+      /**
+       * @type {user}
+       */
+      const user = postgrest_response_body[0];
+      assert(user instanceof Object);
+      assert(typeof user.password_salt === 'string');
+      assert(typeof user.password_key === 'string');
+      const user_password_key_buffer = Buffer.from(user.password_key, 'hex');
+      const password_key_buffer = await scrypt(password, user.password_salt);
+      assert(crypto.timingSafeEqual(user_password_key_buffer, password_key_buffer) === true, 'INVALID_EMAIL_OR_PASSWORD');
+      user.invitation_code = null;
+      user.verification_code = null;
+      user.recovery_code = null;
+      user.password_salt = null;
+      user.password_key = null;
+      const token = create_token(user.id, 'public_user', user.email, secret_b64);
+      return { user, token };
+    } catch (e) {
+      if (postgrest_response instanceof Object) {
+        const status = postgrest_response.status;
+        const body = postgrest_response_body;
+        console.error({ status, body });
+      }
+      throw e;
+    }
+  }
+};
 
 /**
  * What's in here:
@@ -29,23 +283,6 @@ const secret = env.get('PGRST_JWT_SECRET');
  */
 process.nextTick(async () => {
 
-  // non-expiring anon token
-  const create_anon_token = () => {
-    const header = { alg: 'HS256', typ: 'JWT' };
-    const payload = {
-      iat: luxon.DateTime.now().toSeconds(),
-      nbf: luxon.DateTime.now().toSeconds(),
-      exp: null,
-      iss: 'crestfall',
-      aud: 'crestfall',
-      sub: null,
-      role: 'anon',
-      email: null,
-    };
-    const token = hs256.create_token(header, payload, secret);
-    return token;
-  };
-
   const rli = readline.createInterface({ input: process.stdin, output: process.stdout });
   const readline_loop = async () => {
     try {
@@ -55,9 +292,9 @@ process.nextTick(async () => {
       const command = segments[0];
       switch (command) {
         case '/ct': {
-          const anon_token = create_anon_token();
+          const anon_token = create_token(null, 'anon', null, secret_b64);
           console.log({ anon_token });
-          const request_token = hs256.verify_token(anon_token, secret);
+          const request_token = hs256.verify_token(anon_token, secret_b64);
           console.log({ request_token });
           break;
         }
@@ -66,7 +303,7 @@ process.nextTick(async () => {
           assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
           const password = segments[2];
           assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
-          const anon_token = create_anon_token();
+          const anon_token = create_token(null, 'anon', null, secret_b64);
           console.log({ anon_token });
           const response = await fetch('http://0.0.0.0:9090/sign-up', {
             method: 'POST',
@@ -87,7 +324,7 @@ process.nextTick(async () => {
           assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
           const password = segments[2];
           assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
-          const anon_token = create_anon_token();
+          const anon_token = create_token(null, 'anon', null, secret_b64);
           console.log({ anon_token });
           const response = await fetch('http://0.0.0.0:9090/sign-in', {
             method: 'POST',
@@ -121,269 +358,6 @@ process.nextTick(async () => {
  * - Internal authentication server
  */
 process.nextTick(async () => {
-
-  const refresh_tokens = new Set();
-
-  // non-expiring auth administrator token
-  const create_auth_admin_token = () => {
-    const header = { alg: 'HS256', typ: 'JWT' };
-    const payload = {
-      iat: luxon.DateTime.now().toSeconds(),
-      nbf: luxon.DateTime.now().toSeconds(),
-      exp: null,
-      iss: 'crestfall',
-      aud: 'crestfall',
-      sub: null,
-      role: 'auth_admin',
-      email: null,
-      refresh_token: null,
-    };
-    const token = hs256.create_token(header, payload, secret);
-    return token;
-  };
-
-  const auth_admin_token = create_auth_admin_token();
-
-  const scrypt_length = 64;
-
-  /**
-   * - https://words.filippo.io/the-scrypt-parameters/
-   * @type {import('crypto').ScryptOptions}
-   */
-  const scrypt_options = { N: 2 ** 15, p: 1, maxmem: 128 * (2 ** 16) * 8 };
-
-  /**
-   * @param {string} password utf-8 nfkc
-   * @param {string} password_salt hex-encoded
-   * @returns {Promise<Buffer>}
-   */
-  const scrypt = async (password, password_salt) => {
-    assert(typeof password === 'string');
-    assert(typeof password_salt === 'string');
-    /**
-     * @type {Buffer}
-     */
-    const password_key_buffer = await new Promise((resolve, reject) => {
-      crypto.scrypt(Buffer.from(password), Buffer.from(password_salt, 'hex'), scrypt_length, scrypt_options, (error, derived_key) => {
-        if (error instanceof Error) {
-          reject(error);
-          return;
-        }
-        resolve(derived_key);
-      });
-    });
-    return password_key_buffer;
-  };
-
-  /**
-   * @param {string} header_authorization_token
-   * @param {string} email
-   * @param {string} password
-   */
-  const sign_up = async (header_authorization_token, email, password) => {
-    // [x] Validate request header authorization token
-    const request_token = hs256.verify_token(header_authorization_token, secret);
-    assert(request_token.payload.iss === 'crestfall');
-    assert(request_token.payload.aud === 'crestfall');
-    assert(request_token.payload.sub === null);
-    assert(request_token.payload.role === 'anon');
-    // [x] Check if email address already used
-    {
-      /**
-       * @type {import('node-fetch').Response}
-       */
-      let postgrest_response = null;
-      /**
-       * @type {any}
-       */
-      let postgrest_response_body = null;
-      try {
-        postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${auth_admin_token}`,
-            'Accept-Profile': 'auth', // For GET or HEAD
-            'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
-          },
-        });
-        assert(postgrest_response.status === 200);
-        assert(postgrest_response.headers.has('content-type') === true);
-        assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
-        postgrest_response_body = await postgrest_response.json();
-        assert(postgrest_response_body instanceof Array);
-        assert(postgrest_response_body.length === 0, 'ERR_EMAIL_ALREADY_USED');
-      } catch (e) {
-        if (postgrest_response instanceof Object) {
-          const status = postgrest_response.status;
-          const body = postgrest_response_body;
-          console.error({ status, body });
-        }
-        throw e;
-      }
-    }
-    // [x] Create user account and sign-in
-    {
-      /**
-       * @type {import('node-fetch').Response}
-       */
-      let postgrest_response = null;
-      /**
-       * @type {any}
-       */
-      let postgrest_response_body = null;
-      try {
-        const verification_code = crypto.randomBytes(64).toString('hex');
-        const password_salt = crypto.randomBytes(32).toString('hex');
-        const password_key_buffer = await scrypt(password, password_salt);
-        const password_key = password_key_buffer.toString('hex');
-        /**
-         * @type {user}
-         */
-        const user = {
-          id: undefined,
-          email: email,
-          invitation_code: null,
-          invited_at: null,
-          verification_code: verification_code,
-          verified_at: null,
-          recovery_code: null,
-          recovered_at: null,
-          password_salt: password_salt,
-          password_key: password_key,
-          metadata: {},
-          created_at: undefined,
-          updated_at: undefined,
-        };
-        postgrest_response = await fetch('http://localhost:5433/users', {
-          method: 'POST',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${auth_admin_token}`,
-            'Accept-Profile': 'auth', // For GET or HEAD
-            'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
-            'Content-Type': 'application/json',
-            'Prefer': 'return=representation',
-          },
-          body: JSON.stringify(user),
-        });
-        assert(postgrest_response.status === 200);
-        assert(postgrest_response.headers.has('content-type') === true);
-        assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
-        postgrest_response_body = await postgrest_response.json();
-        assert(postgrest_response_body instanceof Array);
-        const inserted_user = postgrest_response_body[0];
-        assert(inserted_user instanceof Object);
-        Object.assign(user, inserted_user);
-        user.invitation_code = null;
-        user.verification_code = null;
-        user.recovery_code = null;
-        user.password_salt = null;
-        user.password_key = null;
-        const header = { alg: 'HS256', typ: 'JWT' };
-        const payload = {
-          iat: luxon.DateTime.now().toSeconds(),
-          nbf: luxon.DateTime.now().toSeconds(),
-          exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
-          iss: 'crestfall',
-          aud: 'crestfall',
-          sub: user.id,
-          role: 'public_user',
-          email: user.email,
-          refresh_token: crypto.randomBytes(32).toString('hex'),
-        };
-        const token = hs256.create_token(header, payload, secret);
-        refresh_tokens.add(payload.refresh_token);
-        return { user, token };
-      } catch (e) {
-        if (postgrest_response instanceof Object) {
-          const status = postgrest_response.status;
-          const body = postgrest_response_body;
-          console.error({ status, body });
-        }
-        throw e;
-      }
-    }
-  };
-
-  /**
-   * @param {string} header_authorization_token
-   * @param {string} email
-   * @param {string} password
-   */
-  const sign_in = async (header_authorization_token, email, password) => {
-    // [x] Validate request header authorization token
-    const request_token = hs256.verify_token(header_authorization_token, secret);
-    assert(request_token.payload.iss === 'crestfall');
-    assert(request_token.payload.aud === 'crestfall');
-    assert(request_token.payload.sub === null);
-    assert(request_token.payload.role === 'anon');
-    // [x] Check if user exists
-    {
-      /**
-       * @type {import('node-fetch').Response}
-       */
-      let postgrest_response = null;
-      /**
-       * @type {any}
-       */
-      let postgrest_response_body = null;
-      try {
-        postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-            'Authorization': `Bearer ${auth_admin_token}`,
-            'Accept-Profile': 'auth', // For GET or HEAD
-            'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
-          },
-        });
-        assert(postgrest_response.status === 200);
-        assert(postgrest_response.headers.has('content-type') === true);
-        assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
-        postgrest_response_body = await postgrest_response.json();
-        assert(postgrest_response_body instanceof Array);
-        assert(postgrest_response_body.length === 1, 'ERR_INVALID_EMAIL_OR_PASSWORD');
-        /**
-         * @type {user}
-         */
-        const user = postgrest_response_body[0];
-        assert(user instanceof Object);
-        assert(typeof user.password_salt === 'string');
-        assert(typeof user.password_key === 'string');
-        const user_password_key_buffer = Buffer.from(user.password_key, 'hex');
-        const password_key_buffer = await scrypt(password, user.password_salt);
-        assert(crypto.timingSafeEqual(user_password_key_buffer, password_key_buffer) === true, 'INVALID_EMAIL_OR_PASSWORD');
-        user.invitation_code = null;
-        user.verification_code = null;
-        user.recovery_code = null;
-        user.password_salt = null;
-        user.password_key = null;
-        const header = { alg: 'HS256', typ: 'JWT' };
-        const payload = {
-          iat: luxon.DateTime.now().toSeconds(),
-          nbf: luxon.DateTime.now().toSeconds(),
-          exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
-          iss: 'crestfall',
-          aud: 'crestfall',
-          sub: user.id,
-          role: 'public_user',
-          email: user.email,
-          refresh_token: crypto.randomBytes(32).toString('hex'),
-        };
-        const token = hs256.create_token(header, payload, secret);
-        refresh_tokens.add(payload.refresh_token);
-        return { user, token };
-      } catch (e) {
-        if (postgrest_response instanceof Object) {
-          const status = postgrest_response.status;
-          const body = postgrest_response_body;
-          console.error({ status, body });
-        }
-        throw e;
-      }
-    }
-  };
 
   const app = uwu.uws.App({});
 
@@ -474,26 +448,13 @@ process.nextTick(async () => {
       assert(header_authorization.substring(0, 7) === 'Bearer ');
       const header_authorization_token = header_authorization.substring(7);
       assert(typeof header_authorization_token === 'string');
-      const request_token = hs256.verify_token(header_authorization_token, secret);
+      const request_token = hs256.verify_token(header_authorization_token, secret_b64);
       assert(request_token.payload.iss === 'crestfall');
       assert(request_token.payload.aud === 'crestfall');
       assert(typeof request_token.payload.refresh_token === 'string');
       assert(refresh_tokens.has(request_token.payload.refresh_token) === true);
       refresh_tokens.delete(request_token.payload.refresh_token);
-      const header = { alg: 'HS256', typ: 'JWT' };
-      const payload = {
-        iat: luxon.DateTime.now().toSeconds(),
-        nbf: luxon.DateTime.now().toSeconds(),
-        exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
-        iss: request_token.payload.iss,
-        aud: request_token.payload.aud,
-        sub: request_token.payload.sub,
-        role: request_token.payload.role,
-        email: request_token.payload.email,
-        refresh_token: crypto.randomBytes(32).toString('hex'),
-      };
-      const token = hs256.create_token(header, payload, secret);
-      refresh_tokens.add(payload.refresh_token);
+      const token = create_token(request_token.payload.sub, request_token.payload.role, request_token.payload.email, secret_b64);
       response.status = 200;
       response.json.data = { token };
     } catch (e) {
