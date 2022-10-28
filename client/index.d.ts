@@ -35,23 +35,6 @@ export interface assignment {
   assigned_at?: string;
 }
 
-export interface postgrest_request_options<T> {
-  protocol: string;
-  host: string;
-  token: string;
-  method?: string;
-  headers?: Record<string, string>;
-  pathname: string;
-  search?: Record<string, string>;
-  json?: T;
-}
-
-export interface postgrest_response<T> {
-  status: number;
-  headers: Headers;
-  body: T;
-}
-
 export interface sign_up_response {
   user: user;
   token: string;
@@ -79,4 +62,3 @@ export interface auth_response<T> {
 export type sign_up = (email: string, password: string) => auth_response<sign_up_response>;
 export type sign_in = (email: string, password: string) => auth_response<sign_in_response>;
 export type refresh_token = () => auth_response<refresh_token_response>;
-export type postgrest_request = (postgrest_request_options: postgrest_request_options<any>) => postgrest_response<any>;

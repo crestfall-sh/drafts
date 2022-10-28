@@ -9,6 +9,7 @@
 
 import assert from 'assert';
 import * as crestfall from './index.mjs';
+import * as postgrest from './postgrest.mjs';
 import env from './env.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import * as luxon from 'luxon';
@@ -99,7 +100,7 @@ const public_admin_client = crestfall.initialize('http', 'localhost', public_adm
 
 process.nextTick(async () => {
   {
-    const postgrest_response = await crestfall.postgrest_request({
+    const postgrest_response = await postgrest.request({
       protocol: 'http',
       host: '0.0.0.0',
       token: anon_token,
@@ -124,7 +125,7 @@ process.nextTick(async () => {
     /**
      * @type {import('./index').postgrest_response<role[]>}
      */
-    const roles_response = await crestfall.postgrest_request({
+    const roles_response = await postgrest.request({
       protocol: 'http',
       host: '0.0.0.0',
       token: public_admin_token,
@@ -150,9 +151,9 @@ process.nextTick(async () => {
     console.log({ assignment });
 
     /**
-     * @type {import('./index').postgrest_response<assignment[]>}
+     * @type {import('./postgrest').response<assignment[]>}
      */
-    const assignment_response = await crestfall.postgrest_request({
+    const assignment_response = await postgrest.request({
       protocol: 'http',
       host: '0.0.0.0',
       token: public_admin_token,
@@ -175,7 +176,7 @@ process.nextTick(async () => {
     // console.log(JSON.stringify({ refresh_response }, null, 2));
   }
   {
-    const postgrest_response = await crestfall.postgrest_request({
+    const postgrest_response = await postgrest.request({
       protocol: 'http',
       host: '0.0.0.0',
       token: anon_token,
