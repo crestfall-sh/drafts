@@ -36,6 +36,9 @@ export interface assignment {
 }
 
 export interface postgrest_request_options<T> {
+  protocol: string;
+  host: string;
+  token: string;
   method?: string;
   headers?: Record<string, string>;
   pathname: string;
@@ -48,7 +51,6 @@ export interface postgrest_response<T> {
   headers: Headers;
   body: T;
 }
-
 
 export interface sign_up_response {
   user: user;

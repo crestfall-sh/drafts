@@ -99,7 +99,12 @@ const public_admin_client = crestfall.initialize('http', 'localhost', public_adm
 
 process.nextTick(async () => {
   {
-    const postgrest_response = await client.postgrest_request({ pathname: '/' });
+    const postgrest_response = await crestfall.postgrest_request({
+      protocol: 'http',
+      host: '0.0.0.0',
+      token: anon_token,
+      pathname: '/',
+    });
     console.log(JSON.stringify({ postgrest_response }, null, 2));
   }
   {
@@ -119,7 +124,10 @@ process.nextTick(async () => {
     /**
      * @type {import('./index').postgrest_response<role[]>}
      */
-    const roles_response = await public_admin_client.postgrest_request({
+    const roles_response = await crestfall.postgrest_request({
+      protocol: 'http',
+      host: '0.0.0.0',
+      token: public_admin_token,
       method: 'GET',
       pathname: '/roles',
     });
@@ -144,7 +152,10 @@ process.nextTick(async () => {
     /**
      * @type {import('./index').postgrest_response<assignment[]>}
      */
-    const assignment_response = await public_admin_client.postgrest_request({
+    const assignment_response = await crestfall.postgrest_request({
+      protocol: 'http',
+      host: '0.0.0.0',
+      token: public_admin_token,
       method: 'POST',
       headers: { 'Prefer': 'return=representation' },
       pathname: '/assignments',
@@ -164,7 +175,12 @@ process.nextTick(async () => {
     // console.log(JSON.stringify({ refresh_response }, null, 2));
   }
   {
-    const postgrest_response = await client.postgrest_request({ pathname: '/' });
+    const postgrest_response = await crestfall.postgrest_request({
+      protocol: 'http',
+      host: '0.0.0.0',
+      token: anon_token,
+      pathname: '/',
+    });
     console.log(JSON.stringify({ postgrest_response }, null, 2));
     const tokens = client.tokens();
     console.log({ tokens });
