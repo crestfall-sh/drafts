@@ -11,7 +11,7 @@ eq() {
   if [ $1 -eq $2 ]; then
     return 0
   else
-    echo $3;
+    printf "$3";
     exit 1
   fi
 }
@@ -20,28 +20,22 @@ ge() {
   if [ $1 -ge $2 ]; then
     return 0
   else
-    echo $3;
+    printf "$3";
     exit 1
   fi
 }
 
-if [ "$1" = "--alias" ]; then
+if [ "$1" = "--install" ]; then
   sudo cp $BASH_SOURCE /usr/local/bin/crestfall.sh
   sudo chmod +x /usr/local/bin/crestfall.sh
-  alias crestfall="/usr/local/bin/crestfall.sh"
-  echo "Crestfall: --alias OK"
+  printf "crestfall.sh --install OK\n"
   exit 0
 fi
-if [ "$1" = "--install" ]; then
-  # echo "HASH: '$2'";
-  # echo "URL: '$3'";
-  eq ${#2} 64 "Error: ERR_INVALID_HASH_LENGTH"
-  ge ${#3} 1 "Error: ERR_INVALID_URL_LENGTH"
-  curl --silent --show-error --output ./install.sh $3 || exit 1
-  echo "$2 ./install.sh" | sha256sum --check || exit 1
-  bash ./install.sh
-  rm --force ./install.sh
-  exit 0
-fi
-echo "Crestfall v0.1.0"
+
+eq ${#1} 64 "Error: ERR_INVALID_HASH_LENGTH"
+ge ${#2} 1 "Error: ERR_INVALID_URL_LENGTH"
+curl --silent --show-error --output ./install.sh $2 || exit 1
+printf "$1 ./install.sh" | sha256sum --check || exit 1
+bash ./install.sh
+rm --force ./install.sh
 exit 0
