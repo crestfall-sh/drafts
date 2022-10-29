@@ -4,8 +4,8 @@
 # https://news.ycombinator.com/item?id=26825300
 # https://linuxize.com/post/bash-if-else-statement/
 # https://github.com/torokmark/assert.sh/blob/main/assert.sh
-# bash ./test.sh --alias
-# bash ./test.sh --install 93e7e98db4a7a9d240b490dfc9d143477297affcbc24bea0de964523f01b58ad https://gist.githubusercontent.com/joshxyzhimself/5e249ac0f4027b57aa71622f2f86a1b0/raw/1accf4558e575c80a4de6c06631c2c1c7d3d3f7b/example.sh
+# bash ./crestfall.sh --alias
+# bash ./crestfall.sh --install 93e7e98db4a7a9d240b490dfc9d143477297affcbc24bea0de964523f01b58ad https://gist.githubusercontent.com/joshxyzhimself/5e249ac0f4027b57aa71622f2f86a1b0/raw/1accf4558e575c80a4de6c06631c2c1c7d3d3f7b/example.sh
 
 eq() {
   if [ $1 -eq $2 ]; then
@@ -26,7 +26,11 @@ ge() {
 }
 
 if [ "$1" = "--alias" ]; then
-  echo "asd"
+  sudo cp $BASH_SOURCE /usr/local/bin/crestfall.sh
+  sudo chmod +x /usr/local/bin/crestfall.sh
+  alias crestfall="/usr/local/bin/crestfall.sh"
+  echo "Crestfall: --alias OK"
+  exit 0
 fi
 if [ "$1" = "--install" ]; then
   # echo "HASH: '$2'";
@@ -37,4 +41,7 @@ if [ "$1" = "--install" ]; then
   echo "$2 ./install.sh" | sha256sum --check || exit 1
   bash ./install.sh
   rm --force ./install.sh
+  exit 0
 fi
+echo "Crestfall v0.1.0"
+exit 0
