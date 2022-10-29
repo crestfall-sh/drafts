@@ -24,8 +24,8 @@ DROP TABLE IF EXISTS public.permissions CASCADE;
 CREATE TABLE public.permissions (
   "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
   "role_id" uuid REFERENCES public.roles NOT NULL,
-  "resource" text NOT NULL, -- crestfall.authorization
-  "actions" text[] NOT NULL -- read, write
+  "resource" text NOT NULL,
+  "actions" text[] NOT NULL -- crestfall.authorization:read, crestfall.authorization:write
 );
 ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
 
