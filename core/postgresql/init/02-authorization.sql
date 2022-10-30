@@ -24,7 +24,7 @@ DROP TABLE IF EXISTS public.permissions CASCADE;
 CREATE TABLE public.permissions (
   "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
   "role_id" uuid REFERENCES public.roles NOT NULL,
-  "scopes" text[] NOT NULL, -- crestfall.authorization:read, crestfall.authorization:write
+  "scopes" text[] NOT NULL, -- authorization:read, authorization:write
   "description" text NOT NULL -- Crestfall Authorization
 );
 ALTER TABLE public.permissions ENABLE ROW LEVEL SECURITY;
@@ -69,7 +69,7 @@ DROP POLICY IF EXISTS users_select ON public.users;
 CREATE POLICY users_select ON public.users AS PERMISSIVE
 FOR SELECT TO public_user USING (
   users.id = auth.uid()
-  OR is_authorized(auth.uid(), 'crestfall.authorization:read') = true
+  OR is_authorized(auth.uid(), 'authorization:read') = true
 );
 
 -- POLICY for public.roles SELECT
@@ -81,7 +81,7 @@ FOR SELECT TO public_user USING (
     WHERE assignments.role_id = roles.id
     AND assignments.user_id = auth.uid()
   )
-  OR is_authorized(auth.uid(), 'crestfall.authorization:read') = true
+  OR is_authorized(auth.uid(), 'authorization:read') = true
 );
 
 -- POLICY for public.permissions SELECT
@@ -97,7 +97,7 @@ FOR SELECT TO public_user USING (
       AND assignments.user_id = auth.uid()
     )
   )
-  OR is_authorized(auth.uid(), 'crestfall.authorization:read') = true
+  OR is_authorized(auth.uid(), 'authorization:read') = true
 );
 
 -- POLICY for public.assignments SELECT
@@ -105,21 +105,21 @@ DROP POLICY IF EXISTS assignments_select ON public.assignments;
 CREATE POLICY assignments_select ON public.assignments AS PERMISSIVE
 FOR SELECT TO public_user USING (
   assignments.user_id = auth.uid()
-  OR is_authorized(auth.uid(), 'crestfall.authorization:read') = true
+  OR is_authorized(auth.uid(), 'authorization:read') = true
 );
 
 -- POLICY for public.assignments INSERT
 DROP POLICY IF EXISTS assignments_insert ON public.assignments;
 CREATE POLICY assignments_insert ON public.assignments AS PERMISSIVE
 FOR INSERT TO public_user WITH CHECK (
-  is_authorized(auth.uid(), 'crestfall.authorization:write') = true
+  is_authorized(auth.uid(), 'authorization:write') = true
 );
 
 -- POLICY for public.assignments DELETE
 DROP POLICY IF EXISTS assignments_delete ON public.assignments;
 CREATE POLICY assignments_delete ON public.assignments AS PERMISSIVE
 FOR DELETE TO public_user USING (
-  is_authorized(auth.uid(), 'crestfall.authorization:write') = true
+  is_authorized(auth.uid(), 'authorization:write') = true
 );
 
 -- FUNCTION for auth.users AFTER INSERT
@@ -154,19 +154,19 @@ VALUES
 INSERT INTO public.roles ("name")
 VALUES ('administrator'), ('moderator');
 
--- INSERT permissions administrator crestfall.authorization read, write
+-- INSERT permissions administrator authorization read, write
 INSERT INTO public.permissions ("role_id", "scopes", "description")
 VALUES (
   (SELECT "id" FROM public.roles WHERE "name" = 'administrator'),
-  ARRAY['crestfall.authorization:read', 'crestfall.authorization:write']::text[],
+  ARRAY['authorization:read', 'authorization:write']::text[],
   'Crestfall Authorization for Administrators'
 );
 
--- INSERT permissions moderator crestfall.authorization read
+-- INSERT permissions moderator authorization read
 INSERT INTO public.permissions ("role_id", "scopes", "description")
 VALUES (
   (SELECT "id" FROM public.roles WHERE "name" = 'moderator'),
-  ARRAY['crestfall.authorization:read']::text[],
+  ARRAY['authorization:read']::text[],
   'Crestfall Authorization for Moderators'
 );
 
@@ -186,9 +186,9 @@ VALUES (
 
 SELECT
   "email",
-  is_authorized("id", 'crestfall.authentication:read') as authn_read,
-  is_authorized("id", 'crestfall.authentication:write') as authn_write,
-  is_authorized("id", 'crestfall.authorization:read') as authz_read,
-  is_authorized("id", 'crestfall.authorization:write') as authz_write
+  is_authorized("id", 'authentication:read') as authn_read,
+  is_authorized("id", 'authentication:write') as authn_write,
+  is_authorized("id", 'authorization:read') as authz_read,
+  is_authorized("id", 'authorization:write') as authz_write
 FROM public.users;
 
