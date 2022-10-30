@@ -210,6 +210,7 @@ const sign_up = async (header_authorization_token, email, password) => {
       user.password_salt = null;
       user.password_key = null;
       const scopes = await read_scopes(user.id);
+      console.log({ scopes });
       const token = await create_token(user.id, 'public_user', user.email, scopes, secret_b64);
       return { user, token };
     } catch (e) {
@@ -277,6 +278,7 @@ const sign_in = async (header_authorization_token, email, password) => {
       user.password_salt = null;
       user.password_key = null;
       const scopes = await read_scopes(user.id);
+      console.log({ scopes });
       const token = await create_token(user.id, 'public_user', user.email, scopes, secret_b64);
       return { user, token };
     } catch (e) {

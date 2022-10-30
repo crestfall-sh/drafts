@@ -154,7 +154,7 @@ export const initialize = (protocol, host, port, default_token) => {
     return { default_token, authenticated_token };
   };
 
-  const client = { check_refresh_token, sign_up, sign_in, sign_out, tokens };
+  const client = { refresh_token, check_refresh_token, sign_up, sign_in, sign_out, tokens };
   return client;
 };
 

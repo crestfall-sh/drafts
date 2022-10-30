@@ -167,6 +167,8 @@ process.nextTick(async () => {
     console.log(JSON.stringify({ assignment_response }, null, 2));
     if (assignment_response.status === 201) {
       console.log('assignments: INSERT OK');
+      const refresh_response = await client.refresh_token();
+      console.log(JSON.stringify({ refresh_response }, null, 2));
     }
 
   }
@@ -174,8 +176,8 @@ process.nextTick(async () => {
     // const tokens = client.tokens();
     // console.log({ tokens });
     // await new Promise((resolve) => setTimeout(resolve, (12 * 60 * 1000) + (30 * 1000)));
-    // const refresh_response = await client.check_refresh_token();
-    // console.log(JSON.stringify({ refresh_response }, null, 2));
+    // const check_refresh_response = await client.check_refresh_token();
+    // console.log(JSON.stringify({ check_refresh_response }, null, 2));
   }
   {
     // const postgrest_response = await postgrest.request({
