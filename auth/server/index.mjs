@@ -113,7 +113,7 @@ const sign_up = async (header_authorization_token, email, password) => {
      */
     let postgrest_response_body = null;
     try {
-      postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
+      postgrest_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
@@ -170,7 +170,7 @@ const sign_up = async (header_authorization_token, email, password) => {
         created_at: undefined,
         updated_at: undefined,
       };
-      postgrest_response = await fetch('http://localhost:5433/users', {
+      postgrest_response = await fetch('http://0.0.0.0:5433/users', {
         method: 'POST',
         headers: {
           'Accept': 'application/json',
@@ -182,7 +182,7 @@ const sign_up = async (header_authorization_token, email, password) => {
         },
         body: JSON.stringify(user),
       });
-      assert(postgrest_response.status === 200);
+      assert(postgrest_response.status === 201);
       assert(postgrest_response.headers.has('content-type') === true);
       assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
       postgrest_response_body = await postgrest_response.json();
@@ -231,7 +231,7 @@ const sign_in = async (header_authorization_token, email, password) => {
      */
     let postgrest_response_body = null;
     try {
-      postgrest_response = await fetch(`http://localhost:5433/users?email=eq.${email}`, {
+      postgrest_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',

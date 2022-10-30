@@ -95,18 +95,18 @@ const create_auth_admin_token = (secret) => {
 const auth_admin_token = create_auth_admin_token(PGRST_JWT_SECRET);
 console.log({ auth_admin_token });
 
-const client = crestfall.initialize('http', 'localhost', anon_token);
+const client = crestfall.initialize('http', '0.0.0.0', 9090, anon_token);
 
 process.nextTick(async () => {
   {
-    const postgrest_response = await postgrest.request({
-      protocol: 'http',
-      host: '0.0.0.0',
-      port: 5433,
-      token: anon_token,
-      pathname: '/',
-    });
-    console.log(JSON.stringify({ postgrest_response }, null, 2));
+    // const postgrest_response = await postgrest.request({
+    //   protocol: 'http',
+    //   host: '0.0.0.0',
+    //   port: 5433,
+    //   token: anon_token,
+    //   pathname: '/',
+    // });
+    // console.log(JSON.stringify({ postgrest_response }, null, 2));
   }
   {
     const sign_up_response = await client.sign_up('alice@gmail.com', 'test1234');
@@ -178,14 +178,14 @@ process.nextTick(async () => {
     // console.log(JSON.stringify({ refresh_response }, null, 2));
   }
   {
-    const postgrest_response = await postgrest.request({
-      protocol: 'http',
-      host: '0.0.0.0',
-      port: 5433,
-      token: anon_token,
-      pathname: '/',
-    });
-    console.log(JSON.stringify({ postgrest_response }, null, 2));
+    // const postgrest_response = await postgrest.request({
+    //   protocol: 'http',
+    //   host: '0.0.0.0',
+    //   port: 5433,
+    //   token: anon_token,
+    //   pathname: '/',
+    // });
+    // console.log(JSON.stringify({ postgrest_response }, null, 2));
     const tokens = client.tokens();
     console.log({ tokens });
     const authenticated_token = hs256.read_token(tokens.authenticated_token);

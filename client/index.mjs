@@ -16,17 +16,16 @@ import assert from 'modules/assert.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import * as luxon from 'luxon';
 
-export const CRESTFALL_AUTH_PORT = 9090;
-export const CRESTFALL_POSTGREST_PORT = 5433;
-
 /**
  * @param {string} protocol
  * @param {string} host
+ * @param {number} port
  * @param {string} default_token
  */
-export const initialize = (protocol, host, default_token) => {
+export const initialize = (protocol, host, port, default_token) => {
   assert(typeof protocol === 'string');
   assert(typeof host === 'string');
+  assert(typeof port === 'number');
   assert(typeof default_token === 'string');
 
   /**
@@ -40,7 +39,7 @@ export const initialize = (protocol, host, default_token) => {
   const refresh_token = async () => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     const request_method = 'POST';
-    const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/refresh`;
+    const request_url = `${protocol}://${host}:${port}/refresh`;
     const request_token = authenticated_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',
@@ -93,7 +92,7 @@ export const initialize = (protocol, host, default_token) => {
     assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
     assert(authenticated_token === null, 'ERR_ALREADY_SIGNED_IN');
     const request_method = 'POST';
-    const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/sign-up`;
+    const request_url = `${protocol}://${host}:${port}/sign-up`;
     const request_token = default_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',
@@ -123,7 +122,7 @@ export const initialize = (protocol, host, default_token) => {
     assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
     assert(authenticated_token === null, 'ERR_ALREADY_SIGNED_IN');
     const request_method = 'POST';
-    const request_url = `${protocol}://${host}:${CRESTFALL_AUTH_PORT}/sign-in`;
+    const request_url = `${protocol}://${host}:${port}/sign-in`;
     const request_token = default_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',

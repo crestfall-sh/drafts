@@ -98,9 +98,8 @@ export const read_authorization_scopes = async (protocol, host, port, token, use
     assert(assignment.role.permissions instanceof Array);
     assignment.role.permissions.forEach((permission) => {
       assert(permission instanceof Object);
-      assert(permission.actions instanceof Array);
-      permission.actions.forEach((action) => {
-        const scope = permission.resource.concat(':', action);
+      assert(permission.scopes instanceof Array);
+      permission.scopes.forEach((scope) => {
         scopes.add(scope);
       });
     });

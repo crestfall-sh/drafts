@@ -18,8 +18,8 @@ export interface user {
 export interface permission {
   id: string;
   role_id: string;
-  resource: string;
-  actions: string[];
+  scopes: string[];
+  description: string;
 }
 
 export interface role {
