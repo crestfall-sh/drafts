@@ -16,6 +16,7 @@ import * as luxon from 'luxon';
 import * as uwu from 'modules/uwu.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import { full_casefold_normalize_nfkc } from 'modules/casefold.mjs';
+import * as postgrest from '../../client/postgrest.mjs';
 import env from '../env.mjs';
 
 const scrypt_length = 64;
@@ -56,13 +57,20 @@ const refresh_tokens = new Set();
  * @param {string} role
  * @param {string} email
  * @param {string} secret_b64
- * @returns {string}
+ * @returns {Promise<string>}
  */
-const create_token = (sub, role, email, secret_b64) => {
+const create_token = async (sub, role, email, secret_b64) => {
   assert(typeof sub === 'string' || sub === null);
   assert(typeof role === 'string' || role === null);
   assert(typeof email === 'string' || email === null);
   assert(typeof secret_b64 === 'string');
+  /**
+   * @type {string[]}
+   */
+  let scopes = null;
+  if (typeof sub === 'string') {
+    scopes = await postgrest.read_authorization_scopes('http', '0.0.0.0', 5433, '', sub);
+  }
   /**
    * @type {import('modules/hs256').header}
    */
@@ -79,6 +87,7 @@ const create_token = (sub, role, email, secret_b64) => {
     sub: sub,
     role: role,
     email: email,
+    scopes: scopes,
     refresh_token: crypto.randomBytes(32).toString('hex'),
   };
   const token = hs256.create_token(header, payload, secret_b64);
@@ -88,7 +97,7 @@ const create_token = (sub, role, email, secret_b64) => {
 
 const secret_b64 = env.get('PGRST_JWT_SECRET');
 
-const auth_admin_token = create_token(null, 'auth_admin', null, secret_b64);
+const auth_admin_token = await create_token(null, 'auth_admin', null, secret_b64);
 
 /**
  * @param {string} header_authorization_token
@@ -195,7 +204,7 @@ const sign_up = async (header_authorization_token, email, password) => {
       user.recovery_code = null;
       user.password_salt = null;
       user.password_key = null;
-      const token = create_token(user.id, 'public_user', user.email, secret_b64);
+      const token = await create_token(user.id, 'public_user', user.email, secret_b64);
       return { user, token };
     } catch (e) {
       if (postgrest_response instanceof Object) {
@@ -261,7 +270,7 @@ const sign_in = async (header_authorization_token, email, password) => {
       user.recovery_code = null;
       user.password_salt = null;
       user.password_key = null;
-      const token = create_token(user.id, 'public_user', user.email, secret_b64);
+      const token = await create_token(user.id, 'public_user', user.email, secret_b64);
       return { user, token };
     } catch (e) {
       if (postgrest_response instanceof Object) {
@@ -292,7 +301,7 @@ process.nextTick(async () => {
       const command = segments[0];
       switch (command) {
         case '/ct': {
-          const anon_token = create_token(null, 'anon', null, secret_b64);
+          const anon_token = await create_token(null, 'anon', null, secret_b64);
           console.log({ anon_token });
           const request_token = hs256.verify_token(anon_token, secret_b64);
           console.log({ request_token });
@@ -303,7 +312,7 @@ process.nextTick(async () => {
           assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
           const password = segments[2];
           assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
-          const anon_token = create_token(null, 'anon', null, secret_b64);
+          const anon_token = await create_token(null, 'anon', null, secret_b64);
           console.log({ anon_token });
           const response = await fetch('http://0.0.0.0:9090/sign-up', {
             method: 'POST',
@@ -324,7 +333,7 @@ process.nextTick(async () => {
           assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
           const password = segments[2];
           assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
-          const anon_token = create_token(null, 'anon', null, secret_b64);
+          const anon_token = await create_token(null, 'anon', null, secret_b64);
           console.log({ anon_token });
           const response = await fetch('http://0.0.0.0:9090/sign-in', {
             method: 'POST',
@@ -454,7 +463,7 @@ process.nextTick(async () => {
       assert(typeof request_token.payload.refresh_token === 'string');
       assert(refresh_tokens.has(request_token.payload.refresh_token) === true);
       refresh_tokens.delete(request_token.payload.refresh_token);
-      const token = create_token(request_token.payload.sub, request_token.payload.role, request_token.payload.email, secret_b64);
+      const token = await create_token(request_token.payload.sub, request_token.payload.role, request_token.payload.email, secret_b64);
       response.status = 200;
       response.json.data = { token };
     } catch (e) {
