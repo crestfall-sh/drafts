@@ -188,13 +188,13 @@ process.nextTick(async () => {
     // console.log(JSON.stringify({ postgrest_response }, null, 2));
     const tokens = client.tokens();
     console.log({ tokens });
-    const authenticated_token = hs256.read_token(tokens.authenticated_token);
-    console.log({ authenticated_token });
+    const authenticated_token_data = hs256.read_token(tokens.authenticated_token);
+    console.log(JSON.stringify({ authenticated_token_data }, null, 2));
   }
   {
     const authenticated_token = client.tokens().authenticated_token;
     const authenticated_token_data = hs256.read_token(authenticated_token);
-    console.log({ authenticated_token_data });
+    console.log(JSON.stringify({ authenticated_token_data }, null, 2));
     const authorization_scopes = await postgrest.read_authorization_scopes('http', '0.0.0.0', 5433, authenticated_token, null);
     console.log(JSON.stringify({ authorization_scopes }, null, 2));
   }

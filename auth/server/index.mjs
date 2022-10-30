@@ -56,21 +56,16 @@ const refresh_tokens = new Set();
  * @param {string} sub
  * @param {string} role
  * @param {string} email
+ * @param {string[]} scopes
  * @param {string} secret_b64
  * @returns {Promise<string>}
  */
-const create_token = async (sub, role, email, secret_b64) => {
+const create_token = async (sub, role, email, scopes, secret_b64) => {
   assert(typeof sub === 'string' || sub === null);
   assert(typeof role === 'string' || role === null);
   assert(typeof email === 'string' || email === null);
+  assert(scopes instanceof Array || scopes === null);
   assert(typeof secret_b64 === 'string');
-  /**
-   * @type {string[]}
-   */
-  let scopes = null;
-  if (typeof sub === 'string') {
-    scopes = await postgrest.read_authorization_scopes('http', '0.0.0.0', 5433, '', sub);
-  }
   /**
    * @type {import('modules/hs256').header}
    */
@@ -97,7 +92,17 @@ const create_token = async (sub, role, email, secret_b64) => {
 
 const secret_b64 = env.get('PGRST_JWT_SECRET');
 
-const auth_admin_token = await create_token(null, 'auth_admin', null, secret_b64);
+const auth_admin_token = await create_token(null, 'auth_admin', null, null, secret_b64);
+const public_admin_token = await create_token(null, 'public_admin', null, null, secret_b64);
+/**
+ * @param {string} user_id
+ * @returns {Promise<string[]>}
+ */
+const read_scopes = async (user_id) => {
+  assert(typeof user_id === 'string');
+  const scopes = await postgrest.read_authorization_scopes('http', '0.0.0.0', 5433, public_admin_token, user_id);
+  return scopes;
+};
 
 /**
  * @param {string} header_authorization_token
@@ -204,7 +209,8 @@ const sign_up = async (header_authorization_token, email, password) => {
       user.recovery_code = null;
       user.password_salt = null;
       user.password_key = null;
-      const token = await create_token(user.id, 'public_user', user.email, secret_b64);
+      const scopes = await read_scopes(user.id);
+      const token = await create_token(user.id, 'public_user', user.email, scopes, secret_b64);
       return { user, token };
     } catch (e) {
       if (postgrest_response instanceof Object) {
@@ -270,7 +276,8 @@ const sign_in = async (header_authorization_token, email, password) => {
       user.recovery_code = null;
       user.password_salt = null;
       user.password_key = null;
-      const token = await create_token(user.id, 'public_user', user.email, secret_b64);
+      const scopes = await read_scopes(user.id);
+      const token = await create_token(user.id, 'public_user', user.email, scopes, secret_b64);
       return { user, token };
     } catch (e) {
       if (postgrest_response instanceof Object) {
@@ -301,7 +308,7 @@ process.nextTick(async () => {
       const command = segments[0];
       switch (command) {
         case '/ct': {
-          const anon_token = await create_token(null, 'anon', null, secret_b64);
+          const anon_token = await create_token(null, 'anon', null, null, secret_b64);
           console.log({ anon_token });
           const request_token = hs256.verify_token(anon_token, secret_b64);
           console.log({ request_token });
@@ -312,7 +319,7 @@ process.nextTick(async () => {
           assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
           const password = segments[2];
           assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
-          const anon_token = await create_token(null, 'anon', null, secret_b64);
+          const anon_token = await create_token(null, 'anon', null, null, secret_b64);
           console.log({ anon_token });
           const response = await fetch('http://0.0.0.0:9090/sign-up', {
             method: 'POST',
@@ -333,7 +340,7 @@ process.nextTick(async () => {
           assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
           const password = segments[2];
           assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
-          const anon_token = await create_token(null, 'anon', null, secret_b64);
+          const anon_token = await create_token(null, 'anon', null, null, secret_b64);
           console.log({ anon_token });
           const response = await fetch('http://0.0.0.0:9090/sign-in', {
             method: 'POST',
@@ -463,7 +470,8 @@ process.nextTick(async () => {
       assert(typeof request_token.payload.refresh_token === 'string');
       assert(refresh_tokens.has(request_token.payload.refresh_token) === true);
       refresh_tokens.delete(request_token.payload.refresh_token);
-      const token = await create_token(request_token.payload.sub, request_token.payload.role, request_token.payload.email, secret_b64);
+      const scopes = await read_scopes(request_token.payload.sub);
+      const token = await create_token(request_token.payload.sub, request_token.payload.role, request_token.payload.email, scopes, secret_b64);
       response.status = 200;
       response.json.data = { token };
     } catch (e) {
