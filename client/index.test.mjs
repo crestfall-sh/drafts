@@ -185,6 +185,10 @@ process.nextTick(async () => {
       const role_id = administrator.id;
       const authorize_response = await client.authorize(user_id, role_id);
       console.log(JSON.stringify({ authorize_response }, null, 2));
+      if (authorize_response.status === 201 || authorize_response.status === 409) { // 201 created or 409 conflict
+        const deauthorize_response = await client.deauthorize(authorize_response.body[0].id);
+        console.log(JSON.stringify({ deauthorize_response }, null, 2));
+      }
     }
   }
   {

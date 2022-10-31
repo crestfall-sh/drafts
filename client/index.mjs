@@ -226,9 +226,6 @@ export const initialize = (protocol, host, port, default_token) => {
       pathname: '/assignments',
       json: assignment,
     });
-    if (assignment_response.status === 201) {
-      await refresh_token();
-    }
     return assignment_response;
   };
 
@@ -237,6 +234,22 @@ export const initialize = (protocol, host, port, default_token) => {
    */
   const deauthorize = async (assignment_id) => {
     assert(typeof assignment_id === 'string');
+    /**
+     * @type {import('./postgrest').response<assignment[]>}
+     */
+    const assignment_response = await postgrest.request({
+      protocol: protocol,
+      host: host,
+      port: 5433,
+      token: authenticated_token,
+      method: 'DELETE',
+      headers: { 'Prefer': 'return=representation' },
+      pathname: '/assignments',
+      search: {
+        id: `eq.${assignment_id}`,
+      },
+    });
+    return assignment_response;
   };
 
   /**
