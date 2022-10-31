@@ -199,5 +199,9 @@ process.nextTick(async () => {
     console.log(JSON.stringify({ authenticated_token_data }, null, 2));
     const authorization_scopes = await postgrest.read_authorization_scopes('http', '0.0.0.0', 5433, authenticated_token, null);
     console.log(JSON.stringify({ authorization_scopes }, null, 2));
+    console.log(`authn:read: ${client.is_authorized('authn:read')}`);
+    console.log(`authn:write: ${client.is_authorized('authn:write')}`);
+    console.log(`authz:read: ${client.is_authorized('authz:read')}`);
+    console.log(`authz:write: ${client.is_authorized('authz:write')}`);
   }
 });

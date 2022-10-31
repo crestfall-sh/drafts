@@ -34,7 +34,11 @@ export const initialize = (protocol, host, port, default_token) => {
    * @type {string}
    */
   let authenticated_token = null;
-  const authenticated_token_data = null;
+
+  /**
+   * @type {import('modules/hs256').token_data}
+   */
+  let authenticated_token_data = null;
 
   /**
    * @type {import('./index').refresh_token}
@@ -58,6 +62,7 @@ export const initialize = (protocol, host, port, default_token) => {
       if (body.data instanceof Object) {
         if (typeof body.data.token === 'string') {
           authenticated_token = body.data.token;
+          authenticated_token_data = hs256.read_token(authenticated_token);
         }
       }
     }
@@ -78,6 +83,7 @@ export const initialize = (protocol, host, port, default_token) => {
     const now = luxon.DateTime.now();
     if (exp <= now) {
       authenticated_token = null;
+      authenticated_token_data = null;
       throw new Error('ERR_TOKEN_EXPIRED_ALREADY_SIGNED_OUT');
     }
     const refresh_window = exp.minus({ minutes: 3 });
@@ -111,6 +117,7 @@ export const initialize = (protocol, host, port, default_token) => {
       if (body.data instanceof Object) {
         if (typeof body.data.token === 'string') {
           authenticated_token = body.data.token;
+          authenticated_token_data = hs256.read_token(authenticated_token);
         }
       }
     }
@@ -141,31 +148,43 @@ export const initialize = (protocol, host, port, default_token) => {
       if (body.data instanceof Object) {
         if (typeof body.data.token === 'string') {
           authenticated_token = body.data.token;
+          authenticated_token_data = hs256.read_token(authenticated_token);
         }
       }
     }
     return { status, body };
   };
 
-  /**
-   * @param {string} scope
-   */
-  const is_authorized = (scope) => {
-    assert(typeof scope === 'string');
-
-  };
-
   const sign_out = async () => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     authenticated_token = null;
+    authenticated_token_data = null;
     return null;
+  };
+
+  /**
+   * @param {string} scope
+   * @returns {boolean}
+   */
+  const is_authorized = (scope) => {
+    assert(typeof scope === 'string');
+    const token_data = typeof authenticated_token === 'string' ? authenticated_token_data : default_token_data;
+    return token_data.payload.scopes.includes(scope);
   };
 
   const tokens = () => {
     return { default_token, authenticated_token };
   };
 
-  const client = { refresh_token, check_refresh_token, sign_up, sign_in, sign_out, tokens };
+  const client = {
+    refresh_token,
+    check_refresh_token,
+    sign_up,
+    sign_in,
+    sign_out,
+    is_authorized,
+    tokens,
+  };
   return client;
 };
 
