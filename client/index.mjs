@@ -28,10 +28,13 @@ export const initialize = (protocol, host, port, default_token) => {
   assert(typeof port === 'number');
   assert(typeof default_token === 'string');
 
+  const default_token_data = hs256.read_token(default_token);
+
   /**
    * @type {string}
    */
   let authenticated_token = null;
+  const authenticated_token_data = null;
 
   /**
    * @type {import('./index').refresh_token}
@@ -142,6 +145,14 @@ export const initialize = (protocol, host, port, default_token) => {
       }
     }
     return { status, body };
+  };
+
+  /**
+   * @param {string} scope
+   */
+  const is_authorized = (scope) => {
+    assert(typeof scope === 'string');
+
   };
 
   const sign_out = async () => {
