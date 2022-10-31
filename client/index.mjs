@@ -9,6 +9,7 @@
  * - [ ] function to authorize and deauthorize
  * - [ ] auto-refresh tokens using setInterval
  * - [ ] event emitter interface for auth state change
+ * - https://httpstatuses.io/
  */
 
 /**
