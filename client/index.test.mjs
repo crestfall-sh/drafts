@@ -117,6 +117,14 @@ process.nextTick(async () => {
     }
   }
   {
+    const sign_up_response = await client.sign_up('bob@gmail.com', 'test1234');
+    console.log(JSON.stringify({ sign_up_response }, null, 2));
+    if (sign_up_response.status === 200) {
+      const sign_out_response = await client.sign_out();
+      console.log(JSON.stringify({ sign_out_response }, null, 2));
+    }
+  }
+  {
 
     const sign_in_response = await client.sign_in('alice@gmail.com', 'test1234');
     console.log(JSON.stringify({ sign_in_response }, null, 2));
@@ -170,7 +178,14 @@ process.nextTick(async () => {
       const refresh_response = await client.refresh_token();
       console.log(JSON.stringify({ refresh_response }, null, 2));
     }
-
+    {
+      const bob = await client.read_user('bob@gmail.com');
+      console.log({ bob });
+      const user_id = bob.id;
+      const role_id = administrator.id;
+      const authorize_response = await client.authorize(user_id, role_id);
+      console.log(JSON.stringify({ authorize_response }, null, 2));
+    }
   }
   {
     // const tokens = client.tokens();

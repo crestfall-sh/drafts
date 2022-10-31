@@ -1,4 +1,3 @@
-
 export interface user {
   id: string;
   email: string;
@@ -15,17 +14,22 @@ export interface user {
   updated_at: string;
 }
 
-export interface permission {
+export interface public_user {
   id: string;
-  role_id: string;
-  scopes: string[];
-  description: string;
+  email: string;
 }
 
 export interface role {
   id: string;
   name: string;
   permissions?: permission[];
+}
+
+export interface permission {
+  id: string;
+  role_id: string;
+  scopes: string[];
+  description: string;
 }
 
 export interface assignment {

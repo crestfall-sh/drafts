@@ -11,10 +11,19 @@
  * - [ ] event emitter interface for auth state change
  */
 
+/**
+ * @typedef {import('./index').user} user
+ * @typedef {import('./index').public_user} public_user
+ * @typedef {import('./index').role} role
+ * @typedef {import('./index').permission} permission
+ * @typedef {import('./index').assignment} assignment
+ */
+
 import fetch from 'cross-fetch';
 import assert from 'modules/assert.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import * as luxon from 'luxon';
+import * as postgrest from './postgrest.mjs';
 
 /**
  * @param {string} protocol
@@ -163,6 +172,74 @@ export const initialize = (protocol, host, port, default_token) => {
   };
 
   /**
+   * @param {string} email
+   */
+  const read_user = async (email) => {
+    assert(typeof email === 'string');
+    assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
+    /**
+     * @type {import('./postgrest').response<public_user[]>}
+     */
+    const response = await postgrest.request({
+      protocol: protocol,
+      host: host,
+      port: 5433,
+      token: authenticated_token,
+      method: 'GET',
+      headers: { 'Prefer': 'return=representation' },
+      pathname: '/users',
+      search: {
+        email: `eq.${email}`,
+      },
+    });
+    console.log(JSON.stringify({ response }, null, 2));
+    if (response.body instanceof Array) {
+      if (response.body[0] instanceof Object) {
+        return response.body[0];
+      }
+    }
+    return null;
+  };
+
+  /**
+   * @param {string} user_id
+   * @param {string} role_id
+   */
+  const authorize = async (user_id, role_id) => {
+    assert(typeof user_id === 'string');
+    assert(typeof role_id === 'string');
+    assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
+    /**
+     * @type {assignment}
+     */
+    const assignment = { id: undefined, user_id: user_id, role_id: role_id };
+    /**
+     * @type {import('./postgrest').response<assignment[]>}
+     */
+    const assignment_response = await postgrest.request({
+      protocol: protocol,
+      host: host,
+      port: 5433,
+      token: authenticated_token,
+      method: 'POST',
+      headers: { 'Prefer': 'return=representation' },
+      pathname: '/assignments',
+      json: assignment,
+    });
+    if (assignment_response.status === 201) {
+      await refresh_token();
+    }
+    return assignment_response;
+  };
+
+  /**
+   * @param {string} assignment_id
+   */
+  const deauthorize = async (assignment_id) => {
+    assert(typeof assignment_id === 'string');
+  };
+
+  /**
    * @param {string} scope
    * @returns {boolean}
    */
@@ -182,6 +259,9 @@ export const initialize = (protocol, host, port, default_token) => {
     sign_up,
     sign_in,
     sign_out,
+    read_user,
+    authorize,
+    deauthorize,
     is_authorized,
     tokens,
   };
