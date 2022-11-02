@@ -35,6 +35,26 @@ services:
       PGRST_JWT_AUD: crestfall
     depends_on:
       - postgresql
+  caddy:
+    image: caddy:2
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - ./volumes/caddy/data:/data
+      - ./volumes/caddy/config:/config
+      - ./volumes/caddy/logs:/var/log/caddy/
+      - ./caddy/Caddyfile-dev.cdf:/etc/caddy/Caddyfile
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    depends_on:
+      - postgresql
+      - postgrest
+    # note: test extra_hosts or network_mode with http://0.0.0.0/auth/ not http://0.0.0.0/auth
+    # note: network_mode gives raw access of host ports to the container
+    # note: network_mode requires removal of "ports" section
+    # network_mode: "host"
   # auth:
   #   build:
   #     context: ../auth/
