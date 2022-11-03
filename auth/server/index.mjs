@@ -53,7 +53,8 @@ const scrypt = async (password, password_salt) => {
 const refresh_tokens = new Set();
 
 /**
- * exp, sub, role, email, scopes
+ * exp: defaults to T + 15 Minutes
+ * sub, role, email, scopes: defaults to null
  * @param {string} secret_b64
  * @param {import('modules/hs256').payload} payload_override
  * @returns {Promise<string>}
