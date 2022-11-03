@@ -218,55 +218,46 @@ const sign_in = async (header_authorization_token, email, password) => {
   // [x] Check if user exists
   {
     /**
-     * @type {import('node-fetch').Response}
+     * @type {import('../../client/postgrest').response<user[]>}
      */
-    let postgrest_response = null;
-    /**
-     * @type {any}
-     */
-    let postgrest_response_body = null;
-    try {
-      postgrest_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${auth_admin_token}`,
-          'Accept-Profile': 'auth', // For GET or HEAD
-          'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
-        },
-      });
-      assert(postgrest_response.status === 200);
-      assert(postgrest_response.headers.has('content-type') === true);
-      assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
-      postgrest_response_body = await postgrest_response.json();
-      assert(postgrest_response_body instanceof Array);
-      assert(postgrest_response_body.length === 1, 'ERR_INVALID_EMAIL_OR_PASSWORD');
-      /**
-       * @type {user}
-       */
-      const user = postgrest_response_body[0];
-      assert(user instanceof Object);
-      assert(typeof user.password_salt === 'string');
-      assert(typeof user.password_key === 'string');
-      const user_password_key_buffer = Buffer.from(user.password_key, 'hex');
-      const password_key_buffer = await scrypt(password, user.password_salt);
-      assert(crypto.timingSafeEqual(user_password_key_buffer, password_key_buffer) === true, 'INVALID_EMAIL_OR_PASSWORD');
-      user.invitation_code = null;
-      user.verification_code = null;
-      user.recovery_code = null;
-      user.password_salt = null;
-      user.password_key = null;
-      const scopes = await read_scopes(user.id);
-      const token = await create_token(user.id, 'public_user', user.email, scopes, secret_b64);
-      return { user, token };
-    } catch (e) {
-      if (postgrest_response instanceof Object) {
-        const status = postgrest_response.status;
-        const body = postgrest_response_body;
-        console.error({ status, body });
-      }
-      throw e;
+    const response = await postgrest.request({
+      protocol: 'http',
+      host: '0.0.0.0',
+      port: 5433,
+      token: auth_admin_token,
+      pathname: '/users',
+      search: {
+        email: `eq.${email}`,
+      },
+      headers: {
+        'Accept-Profile': 'auth', // For GET or HEAD
+        'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
+      },
+    });
+    if (response.status !== 200) {
+      console.error({ response });
     }
+    assert(response.status === 200);
+    assert(response.body instanceof Array);
+    assert(response.body.length === 1, 'ERR_INVALID_EMAIL_OR_PASSWORD');
+    /**
+     * @type {user}
+     */
+    const user = response.body[0];
+    assert(user instanceof Object);
+    assert(typeof user.password_salt === 'string');
+    assert(typeof user.password_key === 'string');
+    const user_password_key_buffer = Buffer.from(user.password_key, 'hex');
+    const password_key_buffer = await scrypt(password, user.password_salt);
+    assert(crypto.timingSafeEqual(user_password_key_buffer, password_key_buffer) === true, 'INVALID_EMAIL_OR_PASSWORD');
+    user.invitation_code = null;
+    user.verification_code = null;
+    user.recovery_code = null;
+    user.password_salt = null;
+    user.password_key = null;
+    const scopes = await read_scopes(user.id);
+    const token = await create_token(user.id, 'public_user', user.email, scopes, secret_b64);
+    return { user, token };
   }
 };
 
