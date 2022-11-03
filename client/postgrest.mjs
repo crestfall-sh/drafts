@@ -53,10 +53,11 @@ export const request = async (options) => {
   });
   assert(response.headers.has('content-type') === true);
   assert(response.headers.get('content-type').includes('application/json') === true || response.headers.get('content-type').includes('application/openapi+json') === true);
+  const request_options = options;
   const status = response.status;
   const headers = response.headers;
   const body = await response.json();
-  return { status, headers, body };
+  return { request_options, status, headers, body };
 };
 
 /**

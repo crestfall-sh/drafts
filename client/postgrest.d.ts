@@ -11,6 +11,7 @@ export interface request_options<T> {
 }
 
 export interface response<T> {
+  request_options: request_options<any>;
   status: number;
   headers: Headers;
   body: T;
