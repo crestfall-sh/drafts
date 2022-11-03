@@ -116,110 +116,93 @@ const sign_up = async (header_authorization_token, email, password) => {
   assert(request_token.payload.aud === 'crestfall');
   assert(request_token.payload.sub === null);
   assert(request_token.payload.role === 'anon');
+
   // [x] Check if email address already used
   {
     /**
-     * @type {import('node-fetch').Response}
+     * @type {import('../../client/postgrest').response<user[]>}
      */
-    let postgrest_response = null;
-    /**
-     * @type {any}
-     */
-    let postgrest_response_body = null;
-    try {
-      postgrest_response = await fetch(`http://0.0.0.0:5433/users?email=eq.${email}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${auth_admin_token}`,
-          'Accept-Profile': 'auth', // For GET or HEAD
-          'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
-        },
-      });
-      assert(postgrest_response.status === 200);
-      assert(postgrest_response.headers.has('content-type') === true);
-      assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
-      postgrest_response_body = await postgrest_response.json();
-      assert(postgrest_response_body instanceof Array);
-      assert(postgrest_response_body.length === 0, 'ERR_EMAIL_ALREADY_USED');
-    } catch (e) {
-      if (postgrest_response instanceof Object) {
-        const status = postgrest_response.status;
-        const body = postgrest_response_body;
-        console.error({ status, body });
-      }
-      throw e;
+    const response = await postgrest.request({
+      protocol: 'http',
+      host: '0.0.0.0',
+      port: 5433,
+      token: auth_admin_token,
+      pathname: '/users',
+      search: {
+        email: `eq.${email}`,
+      },
+      headers: {
+        'Accept-Profile': 'auth', // For GET or HEAD
+        'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
+      },
+    });
+    if (response.status !== 200) {
+      console.error({ response });
     }
+    assert(response.status === 200);
+    assert(response.body instanceof Array);
+    assert(response.body.length === 0, 'ERR_EMAIL_ALREADY_USED');
   }
+
   // [x] Create user account and sign-in
   {
+    const verification_code = crypto.randomBytes(64).toString('hex');
+    const password_salt = crypto.randomBytes(32).toString('hex');
+    const password_key_buffer = await scrypt(password, password_salt);
+    const password_key = password_key_buffer.toString('hex');
     /**
-     * @type {import('node-fetch').Response}
+     * @type {user}
      */
-    let postgrest_response = null;
+    const user = {
+      id: undefined,
+      email: email,
+      invitation_code: null,
+      invited_at: null,
+      verification_code: verification_code,
+      verified_at: null,
+      recovery_code: null,
+      recovered_at: null,
+      password_salt: password_salt,
+      password_key: password_key,
+      metadata: {},
+      created_at: undefined,
+      updated_at: undefined,
+    };
     /**
-     * @type {any}
+     * @type {import('../../client/postgrest').response<user[]>}
      */
-    let postgrest_response_body = null;
-    try {
-      const verification_code = crypto.randomBytes(64).toString('hex');
-      const password_salt = crypto.randomBytes(32).toString('hex');
-      const password_key_buffer = await scrypt(password, password_salt);
-      const password_key = password_key_buffer.toString('hex');
-      /**
-       * @type {user}
-       */
-      const user = {
-        id: undefined,
-        email: email,
-        invitation_code: null,
-        invited_at: null,
-        verification_code: verification_code,
-        verified_at: null,
-        recovery_code: null,
-        recovered_at: null,
-        password_salt: password_salt,
-        password_key: password_key,
-        metadata: {},
-        created_at: undefined,
-        updated_at: undefined,
-      };
-      postgrest_response = await fetch('http://0.0.0.0:5433/users', {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${auth_admin_token}`,
-          'Accept-Profile': 'auth', // For GET or HEAD
-          'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
-          'Content-Type': 'application/json',
-          'Prefer': 'return=representation',
-        },
-        body: JSON.stringify(user),
-      });
-      assert(postgrest_response.status === 201);
-      assert(postgrest_response.headers.has('content-type') === true);
-      assert(postgrest_response.headers.get('content-type').includes('application/json') === true);
-      postgrest_response_body = await postgrest_response.json();
-      assert(postgrest_response_body instanceof Array);
-      const inserted_user = postgrest_response_body[0];
-      assert(inserted_user instanceof Object);
-      Object.assign(user, inserted_user);
-      user.invitation_code = null;
-      user.verification_code = null;
-      user.recovery_code = null;
-      user.password_salt = null;
-      user.password_key = null;
-      const scopes = await read_scopes(user.id);
-      const token = await create_token(user.id, 'public_user', user.email, scopes, secret_b64);
-      return { user, token };
-    } catch (e) {
-      if (postgrest_response instanceof Object) {
-        const status = postgrest_response.status;
-        const body = postgrest_response_body;
-        console.error({ status, body });
-      }
-      throw e;
+    const response = await postgrest.request({
+      protocol: 'http',
+      host: '0.0.0.0',
+      port: 5433,
+      token: auth_admin_token,
+      pathname: '/users',
+      search: {
+        email: `eq.${email}`,
+      },
+      headers: {
+        'Accept-Profile': 'auth', // For GET or HEAD
+        'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
+        'Prefer': 'return=representation',
+      },
+      json: user,
+    });
+    if (response.status !== 200) {
+      console.error({ response });
     }
+    assert(response.status === 200);
+    assert(response.body instanceof Array);
+    const inserted_user = response.body[0];
+    assert(inserted_user instanceof Object);
+    Object.assign(user, inserted_user);
+    user.invitation_code = null;
+    user.verification_code = null;
+    user.recovery_code = null;
+    user.password_salt = null;
+    user.password_key = null;
+    const scopes = await read_scopes(user.id);
+    const token = await create_token(user.id, 'public_user', user.email, scopes, secret_b64);
+    return { user, token };
   }
 };
 
