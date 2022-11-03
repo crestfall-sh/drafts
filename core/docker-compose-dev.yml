@@ -1,5 +1,4 @@
-
-# sudo docker compose --file=./studio-dev.yml up --force-recreate --build
+# sudo docker compose --file=./docker-compose-dev.yml up --force-recreate --build
 
 version: '3.8'
 services:
