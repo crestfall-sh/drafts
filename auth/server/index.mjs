@@ -177,9 +177,6 @@ const sign_up = async (header_authorization_token, email, password) => {
       port: 5433,
       token: auth_admin_token,
       pathname: '/users',
-      search: {
-        email: `eq.${email}`,
-      },
       headers: {
         'Accept-Profile': 'auth', // For GET or HEAD
         'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
