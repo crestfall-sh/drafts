@@ -41,6 +41,12 @@ export interface assignment {
   role?: role;
 }
 
+export interface setting {
+  id: string;
+  key: string;
+  value: string;
+}
+
 export interface sign_up_response {
   user: user;
   token: string;

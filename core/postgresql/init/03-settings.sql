@@ -30,4 +30,10 @@ FOR DELETE TO public_user USING (
   is_authorized(auth.uid(), 'settings:write') = true
 );
 
--- INSERT DEFAULT SETTINGS HERE
+-- INSERT default public.settings
+INSERT INTO public.settings ("key", "value")
+VALUES
+  ('smtp.server','smtp.sendgrid.net'),
+  ('smtp.port','587'),
+  ('smtp.username', 'apikey'),
+  ('smtp.password', 'YOUR_SENDGRID_API_KEY');
