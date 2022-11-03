@@ -184,10 +184,10 @@ const sign_up = async (header_authorization_token, email, password) => {
       },
       json: user,
     });
-    if (response.status !== 200) {
+    if (response.status !== 201) {
       console.error({ response });
     }
-    assert(response.status === 200);
+    assert(response.status === 201);
     assert(response.body instanceof Array);
     const inserted_user = response.body[0];
     assert(inserted_user instanceof Object);
