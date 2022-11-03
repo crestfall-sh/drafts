@@ -131,6 +131,7 @@ const sign_up = async (header_authorization_token, email, password) => {
       search: {
         email: `eq.${email}`,
       },
+      method: 'GET',
       headers: {
         'Accept-Profile': 'auth', // For GET or HEAD
         'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
@@ -177,6 +178,7 @@ const sign_up = async (header_authorization_token, email, password) => {
       port: 5433,
       token: auth_admin_token,
       pathname: '/users',
+      method: 'POST',
       headers: {
         'Accept-Profile': 'auth', // For GET or HEAD
         'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
@@ -229,6 +231,7 @@ const sign_in = async (header_authorization_token, email, password) => {
       search: {
         email: `eq.${email}`,
       },
+      method: 'GET',
       headers: {
         'Accept-Profile': 'auth', // For GET or HEAD
         'Content-Profile': 'auth', // For POST, PATCH, PUT and DELETE
