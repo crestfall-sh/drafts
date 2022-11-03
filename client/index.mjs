@@ -55,6 +55,31 @@ export const initialize = (protocol, host, port, default_token) => {
    */
   let interval = null;
 
+  const load = () => {
+    if (typeof window !== 'undefined' && window instanceof Object) {
+      if (window.localStorage instanceof Object) {
+        const crestfall_authenticated_token = window.localStorage.getItem('crestfall_authenticated_token');
+        if (typeof crestfall_authenticated_token === 'string') {
+          authenticated_token = crestfall_authenticated_token;
+          authenticated_token_data = hs256.read_token(authenticated_token);
+        }
+      }
+    }
+  };
+  queueMicrotask(load);
+
+  const save = () => {
+    if (typeof window !== 'undefined' && window instanceof Object) {
+      if (window.localStorage instanceof Object) {
+        if (typeof authenticated_token === 'string') {
+          window.localStorage.setItem('crestfall_authenticated_token', authenticated_token);
+        } else {
+          window.localStorage.removeItem('crestfall_authenticated_token');
+        }
+      }
+    }
+  };
+
   /**
    * @type {import('./index').refresh_token}
    */
@@ -78,6 +103,7 @@ export const initialize = (protocol, host, port, default_token) => {
         if (typeof body.data.token === 'string') {
           authenticated_token = body.data.token;
           authenticated_token_data = hs256.read_token(authenticated_token);
+          queueMicrotask(save);
         }
       }
     }
@@ -99,6 +125,7 @@ export const initialize = (protocol, host, port, default_token) => {
     if (exp <= now) {
       authenticated_token = null;
       authenticated_token_data = null;
+      queueMicrotask(save);
       throw new Error('ERR_TOKEN_EXPIRED_ALREADY_SIGNED_OUT');
     }
     const refresh_window = exp.minus({ minutes: 3 });
@@ -150,6 +177,7 @@ export const initialize = (protocol, host, port, default_token) => {
         if (typeof body.data.token === 'string') {
           authenticated_token = body.data.token;
           authenticated_token_data = hs256.read_token(authenticated_token);
+          queueMicrotask(save);
           queueMicrotask(enable_interval);
         }
       }
@@ -182,6 +210,7 @@ export const initialize = (protocol, host, port, default_token) => {
         if (typeof body.data.token === 'string') {
           authenticated_token = body.data.token;
           authenticated_token_data = hs256.read_token(authenticated_token);
+          queueMicrotask(save);
           queueMicrotask(enable_interval);
         }
       }
@@ -193,6 +222,7 @@ export const initialize = (protocol, host, port, default_token) => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     authenticated_token = null;
     authenticated_token_data = null;
+    queueMicrotask(save);
     queueMicrotask(disable_interval);
     return null;
   };
