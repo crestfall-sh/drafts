@@ -51,6 +51,11 @@ export const initialize = (protocol, host, port, default_token) => {
   let authenticated_token_data = null;
 
   /**
+   * @type {NodeJS.Timer|number}
+   */
+  let interval = null;
+
+  /**
    * @type {import('./index').refresh_token}
    */
   const refresh_token = async () => {
@@ -103,6 +108,23 @@ export const initialize = (protocol, host, port, default_token) => {
     return null;
   };
 
+  const enable_interval = () => {
+    if (interval === null) {
+      interval = setInterval(async () => {
+        try {
+          await check_refresh_token();
+        } catch (e) {
+          console.error(e);
+        }
+      }, 5000);
+    }
+  };
+  const disable_interval = () => {
+    if (typeof interval === 'number') {
+      clearInterval(interval);
+    }
+  };
+
   /**
    * @type {import('./index').sign_up}
    */
@@ -128,6 +150,7 @@ export const initialize = (protocol, host, port, default_token) => {
         if (typeof body.data.token === 'string') {
           authenticated_token = body.data.token;
           authenticated_token_data = hs256.read_token(authenticated_token);
+          queueMicrotask(enable_interval);
         }
       }
     }
@@ -159,6 +182,7 @@ export const initialize = (protocol, host, port, default_token) => {
         if (typeof body.data.token === 'string') {
           authenticated_token = body.data.token;
           authenticated_token_data = hs256.read_token(authenticated_token);
+          queueMicrotask(enable_interval);
         }
       }
     }
@@ -169,6 +193,7 @@ export const initialize = (protocol, host, port, default_token) => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     authenticated_token = null;
     authenticated_token_data = null;
+    queueMicrotask(disable_interval);
     return null;
   };
 
