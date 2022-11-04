@@ -1,10 +1,13 @@
+
+# sudo docker compose --file=./docker-compose.yml up --force-recreate --build
+
 version: '3.8'
 services:
   auth:
     build:
-      context: .
-      dockerfile: ../auth/Dockerfile
+      context: ../ # path of parent directory
+      dockerfile: ./auth/Dockerfile # path relative to context
     restart: "no"
     ports:
       - 9090:9090
-    command: node ./server/index.mjs
+    command: node ./index.mjs

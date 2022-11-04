@@ -6,7 +6,7 @@
 
 import readline from 'node:readline/promises';
 import * as uwu from 'modules/uwu.mjs';
-import env from '../env.mjs';
+import env from '../../env.mjs';
 
 console.log(env);
 

@@ -34,6 +34,17 @@ services:
       PGRST_JWT_AUD: crestfall
     depends_on:
       - postgresql
+  auth:
+    build:
+      context: ../
+      dockerfile: ../auth/Dockerfile
+    restart: "no"
+    ports:
+      - 9090:9090
+    command: node ./server/index.mjs
+    depends_on:
+      - postgresql
+      - postgrest
   caddy:
     image: caddy:2
     ports:
@@ -48,8 +59,7 @@ services:
     extra_hosts:
       - host.docker.internal:host-gateway
     depends_on:
-      - postgresql
-      - postgrest
+      - auth
     # note: test extra_hosts or network_mode with http://0.0.0.0/auth/ not http://0.0.0.0/auth
     # note: network_mode gives raw access of host ports to the container
     # note: network_mode requires removal of "ports" section

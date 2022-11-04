@@ -16,7 +16,7 @@ import * as luxon from 'luxon';
 import * as uwu from 'modules/uwu.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import { full_casefold_normalize_nfkc } from 'modules/casefold.mjs';
-import * as postgrest from '../../client/postgrest.mjs';
+import * as postgrest from '../client/postgrest.mjs';
 import env from '../env.mjs';
 
 const scrypt_length = 64;
@@ -118,7 +118,7 @@ const sign_up = async (header_authorization_token, email, password) => {
   // [x] Check if email address already used
   {
     /**
-     * @type {import('../../client/postgrest').response<user[]>}
+     * @type {import('../client/postgrest').response<user[]>}
      */
     const response = await postgrest.request({
       protocol: 'http',
@@ -168,7 +168,7 @@ const sign_up = async (header_authorization_token, email, password) => {
       updated_at: undefined,
     };
     /**
-     * @type {import('../../client/postgrest').response<user[]>}
+     * @type {import('../client/postgrest').response<user[]>}
      */
     const response = await postgrest.request({
       protocol: 'http',
@@ -223,7 +223,7 @@ const sign_in = async (header_authorization_token, email, password) => {
   // [x] Check if user exists
   {
     /**
-     * @type {import('../../client/postgrest').response<user[]>}
+     * @type {import('../client/postgrest').response<user[]>}
      */
     const response = await postgrest.request({
       protocol: 'http',

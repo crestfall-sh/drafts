@@ -1,13 +1,19 @@
 FROM node:18
-
 ENV NODE_ENV=production
 
-WORKDIR /app
-
-COPY ["./package.json", "./package-lock.json", "./"]
-
+WORKDIR /client/
+COPY ["./client/package.json", "./package-lock.json", "./"]
 RUN npm install --omit=dev
+COPY ./client/ ./
 
-COPY ./ ./
+WORKDIR /auth/
+COPY ["./auth/package.json", "./package-lock.json", "./"]
+RUN npm install --omit=dev
+COPY ./auth/ ./
 
-CMD [ "node", "./server/index.mjs" ]
+WORKDIR /
+COPY ./.env ./.env
+COPY ./env.mjs ./env.mjs
+
+WORKDIR /auth/
+CMD [ "node", "./index.mjs" ]

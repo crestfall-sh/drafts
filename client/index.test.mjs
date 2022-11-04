@@ -10,7 +10,7 @@
 import assert from 'assert';
 import * as crestfall from './index.mjs';
 import * as postgrest from './postgrest.mjs';
-import env from './env.mjs';
+import env from '../env.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import * as luxon from 'luxon';
 
