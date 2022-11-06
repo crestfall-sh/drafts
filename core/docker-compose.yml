@@ -1,6 +1,4 @@
-
-# TODO: separate this into multiple compose files
-# https://docs.docker.com/engine/reference/commandline/compose/#specifying-multiple-compose-files
+# sudo docker compose --file=./docker-compose.yml up --force-recreate --build
 
 # https://www.beekeeperstudio.io/
 # https://hoppscotch.io/
@@ -24,35 +22,35 @@
 # sudo docker compose up
 # sudo docker compose down
 
+# Auth
+# https://hub.docker.com/_/node
+
+# PostgreSQL
+# https://hub.docker.com/_/postgres
+# https://github.com/docker-library/docs/blob/master/postgres/README.md
+# https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml
+# https://github.com/supabase/supabase/tree/master/docker/volumes/db/init
+# https://github.com/supabase/postgres/tree/develop/ansible/tasks/postgres-extensions
+# https://github.com/subzerocloud/postgrest-starter-kit/blob/master/docker-compose.yml
+# https://gist.github.com/leopoldodonnell/b0b7e06943bd389560184d948bdc2d5b
+
+# PostgREST
+# https://hub.docker.com/r/postgrest/postgrest/
+# https://www.postgresql.org/docs/current/libpq-connect.html
+# https://postgrest.org/en/stable/configuration.html
+# https://postgrest.org/en/stable/tutorials/tut0.html
+# https://postgrest.org/en/stable/tutorials/tut1.html
+# http://0.0.0.0:5433/todos
+
+# TypeSense
+# https://hub.docker.com/r/typesense/typesense
+# https://typesense.org/docs/0.23.1/api/server-configuration.html
+# https://typesense.org/docs/guide/docker-swarm-high-availability.html
+# http://0.0.0.0:8108/metrics.json?x-typesense-api-key=crestfall
+
 version: '3.8'
 
 services:
-
-  # https://hub.docker.com/_/node
-  auth:
-    build:
-      context: ../auth/
-      dockerfile: ../auth/Dockerfile
-    restart: "no"
-    ports:
-      - 9090:9090
-    command: node ./server/index.mjs
-  studio:
-    build:
-      context: ../studio/
-      dockerfile: ../studio/Dockerfile
-    restart: "no"
-    ports:
-      - 9100:9100
-    command: node ./server/index.mjs
-
-  # https://hub.docker.com/_/postgres
-  # https://github.com/docker-library/docs/blob/master/postgres/README.md
-  # https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml
-  # https://github.com/supabase/supabase/tree/master/docker/volumes/db/init
-  # https://github.com/supabase/postgres/tree/develop/ansible/tasks/postgres-extensions
-  # https://github.com/subzerocloud/postgrest-starter-kit/blob/master/docker-compose.yml
-  # https://gist.github.com/leopoldodonnell/b0b7e06943bd389560184d948bdc2d5b
   postgresql:
     build:
       context: .
@@ -68,15 +66,7 @@ services:
     volumes:
       - ./postgresql/init:/docker-entrypoint-initdb.d
       - ./volumes/postgresql/data:/var/lib/postgresql/data
-    depends_on:
-      - studio
 
-  # https://hub.docker.com/r/postgrest/postgrest/
-  # https://www.postgresql.org/docs/current/libpq-connect.html
-  # https://postgrest.org/en/stable/configuration.html
-  # https://postgrest.org/en/stable/tutorials/tut0.html
-  # https://postgrest.org/en/stable/tutorials/tut1.html
-  # http://0.0.0.0:5433/todos
   postgrest:
     image: postgrest/postgrest
     links:
@@ -95,10 +85,6 @@ services:
     depends_on:
       - postgresql
 
-  # https://hub.docker.com/r/typesense/typesense
-  # https://typesense.org/docs/0.23.1/api/server-configuration.html
-  # https://typesense.org/docs/guide/docker-swarm-high-availability.html
-  # http://0.0.0.0:8108/metrics.json?x-typesense-api-key=crestfall
   typesense:
     image: typesense/typesense:0.23.1
     ports:
@@ -112,3 +98,15 @@ services:
       - postgresql
     volumes:
       - ./volumes/typesense/data:/var/lib/typesense/data
+
+  auth:
+    build:
+      context: ../ # path of parent directory
+      dockerfile: ./auth/Dockerfile # path relative to context
+    restart: "no"
+    ports:
+      - 9090:9090
+    command: node ./index.mjs
+    depends_on:
+      - postgrest
+  
