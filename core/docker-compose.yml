@@ -51,6 +51,7 @@
 version: '3.8'
 
 services:
+
   postgresql:
     build:
       context: .
@@ -110,3 +111,16 @@ services:
     depends_on:
       - postgrest
   
+  caddy:
+    image: caddy:2
+    ports:
+      - 80:80
+      - 443:443
+      - 443:443/udp
+    volumes:
+      - ./volumes/caddy/data:/data
+      - ./volumes/caddy/config:/config
+      - ./volumes/caddy/logs:/var/log/caddy/
+      - ./caddy/Caddyfile.cdf:/etc/caddy/Caddyfile
+    extra_hosts:
+      - host.docker.internal:host-gateway

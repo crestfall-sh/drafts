@@ -2,6 +2,7 @@
 
 version: '3.8'
 services:
+
   postgresql:
     build:
       context: .
@@ -17,6 +18,7 @@ services:
     volumes:
       - ./postgresql/init:/docker-entrypoint-initdb.d
       - ./volumes/postgresql/data:/var/lib/postgresql/data
+
   postgrest:
     image: postgrest/postgrest
     links:
@@ -34,17 +36,18 @@ services:
       PGRST_JWT_AUD: crestfall
     depends_on:
       - postgresql
+
   auth:
     build:
-      context: ../
-      dockerfile: ../auth/Dockerfile
+      context: ../ # path of parent directory
+      dockerfile: ./auth/Dockerfile # path relative to context
     restart: "no"
     ports:
       - 9090:9090
-    command: node ./server/index.mjs
+    command: node ./index.mjs
     depends_on:
-      - postgresql
       - postgrest
+
   caddy:
     image: caddy:2
     ports:
@@ -58,8 +61,6 @@ services:
       - ./caddy/Caddyfile-dev.cdf:/etc/caddy/Caddyfile
     extra_hosts:
       - host.docker.internal:host-gateway
-    depends_on:
-      - auth
     # note: test extra_hosts or network_mode with http://0.0.0.0/auth/ not http://0.0.0.0/auth
     # note: network_mode gives raw access of host ports to the container
     # note: network_mode requires removal of "ports" section
