@@ -1,3 +1,4 @@
+
 # sudo docker compose --file=./docker-compose-dev.yml up --force-recreate --build
 
 version: '3.8'
@@ -8,8 +9,7 @@ services:
       context: .
       dockerfile: ./postgresql/Dockerfile
     restart: "no"
-    ports:
-      - 5432:5432
+    network_mode: "host" # 5432
     command: postgres -c shared_preload_libraries=pgaudit # pg_cron,pgsodium,pgaudit
     environment:
       POSTGRES_DB: postgres
@@ -21,15 +21,12 @@ services:
 
   postgrest:
     image: postgrest/postgrest
-    links:
-      - postgresql:postgresql
-    ports:
-      - 5433:5433
+    network_mode: "host" # 5433
     environment:
       PGRST_DB_ANON_ROLE: anon
       PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:?error} # public
       PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:?error} # public,extensions
-      PGRST_DB_URI: postgres://${POSTGRES_USER:?error}:${POSTGRES_PASSWORD:?error}@postgresql:5432/postgres
+      PGRST_DB_URI: postgres://${POSTGRES_USER:?error}:${POSTGRES_PASSWORD:?error}@0.0.0.0:5432/postgres
       PGRST_SERVER_PORT: 5433
       PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:?error} # crestfall
       PGRST_JWT_SECRET_IS_BASE64: ${PGRST_JWT_SECRET_IS_BASE64:?error} # true
@@ -42,38 +39,16 @@ services:
       context: ../ # path of parent directory
       dockerfile: ./auth/Dockerfile # path relative to context
     restart: "no"
-    ports:
-      - 9090:9090
+    network_mode: "host" # 9090
     command: node ./index.mjs
     depends_on:
       - postgrest
 
   caddy:
     image: caddy:2
-    ports:
-      - 80:80
-      - 443:443
-      - 443:443/udp
+    network_mode: "host" # 80, 443, 443/udp
     volumes:
       - ./volumes/caddy/data:/data
       - ./volumes/caddy/config:/config
       - ./volumes/caddy/logs:/var/log/caddy/
       - ./caddy/Caddyfile-dev.cdf:/etc/caddy/Caddyfile
-    extra_hosts:
-      - host.docker.internal:host-gateway
-    # note: test extra_hosts or network_mode with http://0.0.0.0/auth/ not http://0.0.0.0/auth
-    # note: network_mode gives raw access of host ports to the container
-    # note: network_mode requires removal of "ports" section
-    # network_mode: "host"
-  # auth:
-  #   build:
-  #     context: ../auth/
-  #     dockerfile: ../auth/Dockerfile
-  #   restart: "no"
-  #   links:
-  #     - postgrest:postgrest
-  #   ports:
-  #     - 9090:9090
-  #   command: node ./server/index.mjs
-  #   depends_on:
-  #     - postgrest

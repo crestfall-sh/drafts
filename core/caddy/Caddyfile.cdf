@@ -5,9 +5,7 @@
   }
 }
 
-# note: exclude trailing slash
-# wrong: example.com/
-# correct: example.com
+# note: exclude trailing slash; wrong: example.com/; correct: example.com
 example.com {
   handle {
     header {

@@ -8,6 +8,5 @@ services:
       context: ../ # path of parent directory
       dockerfile: ./auth/Dockerfile # path relative to context
     restart: "no"
-    ports:
-      - 9090:9090
+    network_mode: "host"
     command: node ./index.mjs
