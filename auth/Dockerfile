@@ -16,4 +16,4 @@ COPY ./.env ./.env
 COPY ./env.mjs ./env.mjs
 
 WORKDIR /auth/
-CMD [ "node", "./index.mjs" ]
+CMD ["node", "./index.mjs"]

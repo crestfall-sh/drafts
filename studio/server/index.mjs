@@ -4,8 +4,11 @@
  * @typedef {import('./index').user} user
  */
 
+import fs from 'fs';
+import path from 'path';
 import readline from 'node:readline/promises';
 import * as uwu from 'modules/uwu.mjs';
+import * as mime_types from 'mime-types';
 import env from '../../env.mjs';
 
 console.log(env);
@@ -45,6 +48,38 @@ process.nextTick(async () => {
 process.nextTick(async () => {
 
   const app = uwu.uws.App({});
+
+  const __cwd = process.cwd();
+  const __dist = path.join(__cwd, './client/dist/');
+
+  app.get('/*', (res, req) => {
+    let url_pathname = req.getUrl();
+    if (url_pathname === '/') {
+      url_pathname = '/index.html';
+    }
+    const file_path = path.join(__dist, url_pathname);
+    if (fs.existsSync(file_path) === true) {
+      const file_stat = fs.statSync(file_path);
+      if (file_stat.isFile() === true) {
+        const file_name = path.basename(url_pathname);
+        const file_content_type = mime_types.contentType(file_name) || null;
+        if (typeof file_content_type === 'string') {
+          res.writeStatus('200');
+          res.writeHeader('Content-Type', file_content_type);
+          res.write(fs.readFileSync(file_path));
+          res.end();
+          return;
+        }
+        res.writeStatus('500');
+        res.end();
+        return;
+      }
+    }
+    res.writeStatus('404');
+    res.end();
+    return;
+  });
+
   app.options('/*', uwu.use_middleware(async (response, request) => {
     response.status = 204;
     const access_control_request_method = request.headers.get('access-control-request-method');
@@ -59,34 +94,6 @@ process.nextTick(async () => {
     response.headers.set('Access-Control-Allow-Headers', access_control_allow_headers.join(','));
     response.headers.set('Access-Control-Max-Age', '300');
   }));
-
-  app.get('/test', uwu.use_middleware(async (response, request) => {
-    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
-    response.json = { data: null, error: null };
-    try {
-      response.status = 200;
-      response.json.data = {};
-    } catch (e) {
-      console.error(e);
-      const error = { request, name: e.name, code: e.code, message: e.message, stack: e.stack };
-      response.status = 500;
-      response.json.error = error;
-    }
-  }));
-
-  /**
-   * @type {import('modules/uwu.js').middleware}
-   */
-  const serve_404 = async (response, request) => {
-    const error = { request, name: 'Not Found', code: 'ERR_NOT_FOUND', message: null, stack: null };
-    response.status = 404;
-    response.json = { data: null, error };
-  };
-  app.get('/*', uwu.use_middleware(serve_404));
-  app.post('/*', uwu.use_middleware(serve_404));
-  app.patch('/*', uwu.use_middleware(serve_404));
-  app.put('/*', uwu.use_middleware(serve_404));
-  app.del('/*', uwu.use_middleware(serve_404));
 
   await uwu.serve_http(app, uwu.port_access_types.EXCLUSIVE, 9100);
 });
