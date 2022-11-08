@@ -8,6 +8,6 @@ export default defineConfig({
   plugins: [react()],
   root: './client/',
   build: {
-    outDir: './client/dist/',
+    outDir: './dist/',
   },
 });
