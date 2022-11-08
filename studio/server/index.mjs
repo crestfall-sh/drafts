@@ -95,5 +95,5 @@ process.nextTick(async () => {
     response.headers.set('Access-Control-Max-Age', '300');
   }));
 
-  await uwu.serve_http(app, uwu.port_access_types.EXCLUSIVE, 9100);
+  await uwu.serve_http(app, uwu.port_access_types.EXCLUSIVE, 9091);
 });

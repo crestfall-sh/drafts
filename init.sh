@@ -27,6 +27,10 @@ if [ "$1" = "--update" ]; then
   npm outdated
   npm update
 fi
+if [ "$1" = "--update-modules" ]; then
+  echo "--> Updating crestfall modules."
+  npm install github:crestfall-sh/modules
+fi
 cd ../
 
 cd ./client/
@@ -40,6 +44,10 @@ if [ "$1" = "--update" ]; then
   npm outdated
   npm update
 fi
+if [ "$1" = "--update-modules" ]; then
+  echo "--> Updating crestfall modules."
+  npm install github:crestfall-sh/modules
+fi
 cd ../
 
 cd ./studio/
@@ -52,6 +60,10 @@ if [ "$1" = "--update" ]; then
   echo "--> Updating studio dependencies."
   npm outdated
   npm update
+fi
+if [ "$1" = "--update-modules" ]; then
+  echo "--> Updating crestfall modules."
+  npm install github:crestfall-sh/modules
 fi
 cd ../
 
