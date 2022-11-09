@@ -71,11 +71,15 @@ process.nextTick(async () => {
           return;
         }
         res.writeStatus('500');
+        res.writeHeader('Content-Type', 'text/plain; charset=utf-8');
+        res.write('500 Internal Server Error');
         res.end();
         return;
       }
     }
     res.writeStatus('404');
+    res.writeHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.write('404 Not Found');
     res.end();
     return;
   });
