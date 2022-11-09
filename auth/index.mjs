@@ -12,11 +12,11 @@ import assert from 'assert';
 import crypto from 'crypto';
 import readline from 'node:readline/promises';
 import fetch from 'node-fetch';
-import * as luxon from 'luxon';
 import * as uwu from 'modules/uwu.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import { full_casefold_normalize_nfkc } from 'modules/casefold.mjs';
 import * as postgrest from '../client/postgrest.mjs';
+import * as crestfall_utils from './utils.mjs';
 import env from '../env.mjs';
 
 const scrypt_length = 64;
@@ -52,45 +52,11 @@ const scrypt = async (password, password_salt) => {
 
 const refresh_tokens = new Set();
 
-/**
- * exp: defaults to T + 15 Minutes
- * sub, role, email, scopes: defaults to null
- * @param {string} secret_b64
- * @param {import('modules/hs256').payload} payload_override
- * @returns {Promise<string>}
- */
-const create_token = async (secret_b64, payload_override) => {
-  assert(typeof secret_b64 === 'string');
-  assert(payload_override instanceof Object);
-  /**
-   * @type {import('modules/hs256').header}
-   */
-  const header = { alg: 'HS256', typ: 'JWT' };
-  /**
-   * @type {import('modules/hs256').payload}
-   */
-  const payload = {
-    iat: luxon.DateTime.now().toSeconds(),
-    nbf: luxon.DateTime.now().toSeconds(),
-    exp: luxon.DateTime.now().plus({ minutes: 15 }).toSeconds(),
-    iss: 'crestfall',
-    aud: 'crestfall',
-    sub: null,
-    role: null,
-    email: null,
-    scopes: null,
-    refresh_token: crypto.randomBytes(32).toString('hex'),
-  };
-  Object.assign(payload, payload_override);
-  const token = hs256.create_token(header, payload, secret_b64);
-  refresh_tokens.add(payload.refresh_token);
-  return token;
-};
-
 const secret_b64 = env.get('PGRST_JWT_SECRET');
 
-const auth_admin_token = await create_token(secret_b64, { exp: null, role: 'auth_admin' });
-const public_admin_token = await create_token(secret_b64, { exp: null, role: 'public_admin' });
+const anon_token = await crestfall_utils.create_token(secret_b64, { exp: null, role: 'anon' });
+const public_admin_token = await crestfall_utils.create_token(secret_b64, { exp: null, role: 'public_admin' });
+const auth_admin_token = await crestfall_utils.create_token(secret_b64, { exp: null, role: 'auth_admin' });
 
 /**
  * @param {string} user_id
@@ -198,7 +164,7 @@ const sign_up = async (header_authorization_token, email, password) => {
     user.password_salt = null;
     user.password_key = null;
     const scopes = await read_scopes(user.id);
-    const token = await create_token(secret_b64, {
+    const token = await crestfall_utils.create_token(secret_b64, {
       sub: user.id,
       role: 'public_user',
       email: user.email,
@@ -262,7 +228,7 @@ const sign_in = async (header_authorization_token, email, password) => {
     user.password_salt = null;
     user.password_key = null;
     const scopes = await read_scopes(user.id);
-    const token = await create_token(secret_b64, {
+    const token = await crestfall_utils.create_token(secret_b64, {
       sub: user.id,
       role: 'public_user',
       email: user.email,
@@ -290,8 +256,6 @@ process.nextTick(async () => {
       const command = segments[0];
       switch (command) {
         case '/ct': {
-          const anon_token = await create_token(secret_b64, { exp: null, role: 'anon' });
-          console.log({ anon_token });
           const request_token = hs256.verify_token(anon_token, secret_b64);
           console.log({ request_token });
           break;
@@ -301,8 +265,6 @@ process.nextTick(async () => {
           assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
           const password = segments[2];
           assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
-          const anon_token = await create_token(secret_b64, { exp: null, role: 'anon' });
-          console.log({ anon_token });
           const response = await fetch('http://0.0.0.0:9090/sign-up', {
             method: 'POST',
             headers: {
@@ -322,8 +284,6 @@ process.nextTick(async () => {
           assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
           const password = segments[2];
           assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
-          const anon_token = await create_token(secret_b64, { exp: null, role: 'anon' });
-          console.log({ anon_token });
           const response = await fetch('http://0.0.0.0:9090/sign-in', {
             method: 'POST',
             headers: {
@@ -358,6 +318,13 @@ process.nextTick(async () => {
 process.nextTick(async () => {
 
   const app = uwu.uws.App({});
+
+  app.get('/tokens/anon', (res) => {
+    res.writeStatus('200');
+    res.writeHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.write(anon_token);
+    res.end();
+  });
 
   app.options('/*', uwu.use_middleware(async (response, request) => {
     response.status = 204;
@@ -453,7 +420,7 @@ process.nextTick(async () => {
       assert(refresh_tokens.has(request_token.payload.refresh_token) === true);
       refresh_tokens.delete(request_token.payload.refresh_token);
       const scopes = await read_scopes(request_token.payload.sub);
-      const token = await create_token(secret_b64, {
+      const token = await crestfall_utils.create_token(secret_b64, {
         sub: request_token.payload.sub,
         role: request_token.payload.role,
         email: request_token.payload.email,

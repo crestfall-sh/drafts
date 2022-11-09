@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "scripts": {
     "vite-dev": "npx vite dev --host=0.0.0.0 --port=9092",
+    "vite-build-watch": "npx vite build --watch --minify=false --sourcemap=true",
     "vite-build": "npx vite build",
     "server": "node ./server/index.mjs",
     "reinstall-modules": "npm install github:crestfall-sh/modules"

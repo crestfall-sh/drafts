@@ -4,7 +4,11 @@ import React from 'react';
 import './App.css';
 import * as crestfall from '../../../client/index.mjs';
 
+const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
+const host = window.location.host;
+const port = 5433;
 
+const client = crestfall.initialize(protocol, host, port, '');
 
 const App = () => {
   const [username, set_username] = React.useState('');

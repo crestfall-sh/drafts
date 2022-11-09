@@ -66,7 +66,13 @@ process.nextTick(async () => {
         if (typeof file_content_type === 'string') {
           res.writeStatus('200');
           res.writeHeader('Content-Type', file_content_type);
-          res.write(fs.readFileSync(file_path));
+          if (url_pathname === '/index.html') {
+            let html = fs.readFileSync(file_path, { encoding: 'utf-8' });
+            html = html.replace('CRESTFALL_DEFAULT_TOKEN = null', `CRESTFALL_DEFAULT_TOKEN = ${''}`);
+            res.write(html);
+          } else {
+            res.write(fs.readFileSync(file_path));
+          }
           res.end();
           return;
         }
