@@ -55,6 +55,11 @@ export const initialize = (protocol, host, port, default_token) => {
    */
   let interval = null;
 
+  /**
+   * @type {import('./index').listeners}
+   */
+  const listeners = new Set();
+
   const load = () => {
     if (typeof window !== 'undefined' && window instanceof Object) {
       if (window.localStorage instanceof Object) {
@@ -64,6 +69,11 @@ export const initialize = (protocol, host, port, default_token) => {
           authenticated_token_data = hs256.read_token(authenticated_token);
         }
       }
+    }
+    if (listeners.size > 0) {
+      listeners.forEach((listener) => {
+        listener(authenticated_token, authenticated_token_data);
+      });
     }
   };
   queueMicrotask(load);
@@ -77,6 +87,11 @@ export const initialize = (protocol, host, port, default_token) => {
           window.localStorage.removeItem('crestfall_authenticated_token');
         }
       }
+    }
+    if (listeners.size > 0) {
+      listeners.forEach((listener) => {
+        listener(authenticated_token, authenticated_token_data);
+      });
     }
   };
 
@@ -323,6 +338,7 @@ export const initialize = (protocol, host, port, default_token) => {
   };
 
   const client = {
+    listeners,
     refresh_token,
     check_refresh_token,
     sign_up,

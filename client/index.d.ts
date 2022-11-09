@@ -1,3 +1,6 @@
+
+import * as hs256 from 'modules/hs256';
+
 export interface user {
   id: string;
   email: string;
@@ -74,3 +77,6 @@ export interface auth_response<T> {
 export type sign_up = (email: string, password: string) => auth_response<sign_up_response>;
 export type sign_in = (email: string, password: string) => auth_response<sign_in_response>;
 export type refresh_token = () => auth_response<refresh_token_response>;
+
+export type listener = (token: string, token_data: hs256.token_data) => void;
+export type listeners = Set<listener>;
