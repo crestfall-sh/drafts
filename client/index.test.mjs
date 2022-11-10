@@ -101,7 +101,7 @@ process.nextTick(async () => {
   {
     // const postgrest_response = await postgrest.request({
     //   protocol: 'http',
-    //   host: '0.0.0.0',
+    //   hostname: '0.0.0.0',
     //   port: 5433,
     //   token: anon_token,
     //   pathname: '/',
@@ -135,7 +135,7 @@ process.nextTick(async () => {
      */
     const roles_response = await postgrest.request({
       protocol: 'http',
-      host: '0.0.0.0',
+      hostname: '0.0.0.0',
       port: 5433,
       token: public_admin_token,
       method: 'GET',
@@ -164,7 +164,7 @@ process.nextTick(async () => {
      */
     const assignment_response = await postgrest.request({
       protocol: 'http',
-      host: '0.0.0.0',
+      hostname: '0.0.0.0',
       port: 5433,
       token: public_admin_token,
       method: 'POST',
@@ -201,7 +201,7 @@ process.nextTick(async () => {
   {
     // const postgrest_response = await postgrest.request({
     //   protocol: 'http',
-    //   host: '0.0.0.0',
+    //   hostname: '0.0.0.0',
     //   port: 5433,
     //   token: anon_token,
     //   pathname: '/',

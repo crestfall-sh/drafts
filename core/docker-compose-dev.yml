@@ -34,15 +34,15 @@ services:
     depends_on:
       - postgresql
 
-  auth:
-    build:
-      context: ../ # path of parent directory
-      dockerfile: ./auth/Dockerfile # path relative to context
-    restart: "no"
-    network_mode: "host" # 9090
-    command: node ./index.mjs
-    depends_on:
-      - postgrest
+  # auth:
+  #   build:
+  #     context: ../ # path of parent directory
+  #     dockerfile: ./auth/Dockerfile # path relative to context
+  #   restart: "no"
+  #   network_mode: "host" # 9090
+  #   command: node ./index.mjs
+  #   depends_on:
+  #     - postgrest
 
   caddy:
     image: caddy:2

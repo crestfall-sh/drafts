@@ -4,23 +4,43 @@ import React from 'react';
 import './App.css';
 import * as crestfall from '../../../client/index.mjs';
 
-const protocol = window.location.protocol === 'https:' ? 'https' : 'http';
-const host = window.location.host;
-const port = 5433;
+const auth_protocol = window.location.protocol === 'https:' ? 'https' : 'http';
+const auth_hostname = window.location.hostname;
+const auth_port = 9090;
+const anon_token = window['CRESTFALL_ANON_TOKEN'];
 
-const client = crestfall.initialize(protocol, host, port, '');
+console.log(auth_protocol, auth_hostname, auth_port, anon_token);
+
+const client = crestfall.initialize(auth_protocol, auth_hostname, auth_port, anon_token);
 
 const App = () => {
-  const [username, set_username] = React.useState('');
+
+  const [email, set_email] = React.useState('');
   const [password, set_password] = React.useState('');
-  const [token, set_token] = React.useState('');
-  const sign_in = React.useCallback(() => {
+
+  const sign_in = React.useCallback(async () => {
     try {
-      alert(`${username} : ${password}`);
+      console.log(email, password);
+      const response = await client.sign_in(email, password);
+      console.log({ response });
     } catch (e) {
       console.error(e);
     }
-  }, [username, password]);
+  }, [email, password]);
+
+  React.useEffect(() => {
+    /**
+     * @type {import('../../../client/index').listener}
+     */
+    const listener = (token, token_data) => {
+      console.log({ token, token_data });
+    };
+    client.listeners.add(listener);
+    return () => {
+      client.listeners.delete(listener);
+    };
+  });
+
   return (
     <div className="App">
       <div className="p-2">
@@ -33,10 +53,10 @@ const App = () => {
           <div className="flex flex-row justify-start items-center gap-2">
             <input
               type="text"
-              placeholder="username"
+              placeholder="email"
               className="p-1 border border-slate-800 bg-slate-50 focus:bg-white outline-none"
-              value={username}
-              onChange={(e) => set_username(e.target.value)}
+              value={email}
+              onChange={(e) => set_email(e.target.value)}
             />
             <input
               type="password"

@@ -28,17 +28,17 @@ import * as postgrest from './postgrest.mjs';
 
 /**
  * @param {string} protocol
- * @param {string} host
+ * @param {string} hostname
  * @param {number} port
- * @param {string} default_token
+ * @param {string} anon_token
  */
-export const initialize = (protocol, host, port, default_token) => {
+export const initialize = (protocol, hostname, port, anon_token) => {
   assert(typeof protocol === 'string');
-  assert(typeof host === 'string');
+  assert(typeof hostname === 'string');
   assert(typeof port === 'number');
-  assert(typeof default_token === 'string');
+  assert(typeof anon_token === 'string');
 
-  const default_token_data = hs256.read_token(default_token);
+  const anon_token_data = hs256.read_token(anon_token);
 
   /**
    * @type {string}
@@ -101,7 +101,7 @@ export const initialize = (protocol, host, port, default_token) => {
   const refresh_token = async () => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     const request_method = 'POST';
-    const request_url = `${protocol}://${host}:${port}/refresh`;
+    const request_url = `${protocol}://${hostname}:${port}/refresh`;
     const request_token = authenticated_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',
@@ -175,8 +175,8 @@ export const initialize = (protocol, host, port, default_token) => {
     assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
     assert(authenticated_token === null, 'ERR_ALREADY_SIGNED_IN');
     const request_method = 'POST';
-    const request_url = `${protocol}://${host}:${port}/sign-up`;
-    const request_token = default_token;
+    const request_url = `${protocol}://${hostname}:${port}/sign-up`;
+    const request_token = anon_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',
       'Authorization': `Bearer ${request_token}`,
@@ -208,8 +208,8 @@ export const initialize = (protocol, host, port, default_token) => {
     assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
     assert(authenticated_token === null, 'ERR_ALREADY_SIGNED_IN');
     const request_method = 'POST';
-    const request_url = `${protocol}://${host}:${port}/sign-in`;
-    const request_token = default_token;
+    const request_url = `${protocol}://${hostname}:${port}/sign-in`;
+    const request_token = anon_token;
     const request_headers = {
       'Content-Type': 'application/json; charset=utf-8',
       'Authorization': `Bearer ${request_token}`,
@@ -253,7 +253,7 @@ export const initialize = (protocol, host, port, default_token) => {
      */
     const response = await postgrest.request({
       protocol: protocol,
-      host: host,
+      hostname: hostname,
       port: 5433,
       token: authenticated_token,
       method: 'GET',
@@ -289,7 +289,7 @@ export const initialize = (protocol, host, port, default_token) => {
      */
     const assignment_response = await postgrest.request({
       protocol: protocol,
-      host: host,
+      hostname: hostname,
       port: 5433,
       token: authenticated_token,
       method: 'POST',
@@ -310,7 +310,7 @@ export const initialize = (protocol, host, port, default_token) => {
      */
     const assignment_response = await postgrest.request({
       protocol: protocol,
-      host: host,
+      hostname: hostname,
       port: 5433,
       token: authenticated_token,
       method: 'DELETE',
@@ -329,12 +329,12 @@ export const initialize = (protocol, host, port, default_token) => {
    */
   const is_authorized = (scope) => {
     assert(typeof scope === 'string');
-    const token_data = typeof authenticated_token === 'string' ? authenticated_token_data : default_token_data;
+    const token_data = typeof authenticated_token === 'string' ? authenticated_token_data : anon_token_data;
     return token_data.payload.scopes.includes(scope);
   };
 
   const tokens = () => {
-    return { default_token, authenticated_token };
+    return { anon_token, authenticated_token };
   };
 
   const client = {

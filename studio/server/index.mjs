@@ -9,7 +9,9 @@ import path from 'path';
 import readline from 'node:readline/promises';
 import * as uwu from 'modules/uwu.mjs';
 import * as mime_types from 'mime-types';
+import fetch from 'node-fetch';
 import env from '../../env.mjs';
+import { assert } from 'console';
 
 console.log(env);
 
@@ -47,6 +49,18 @@ process.nextTick(async () => {
  */
 process.nextTick(async () => {
 
+  /**
+   * @type {string}
+   */
+  let anon_token = null;
+
+  {
+    const response = await fetch('http://0.0.0.0:9090/tokens/anon');
+    assert(response.status === 200);
+    anon_token = await response.text();
+    console.log({ anon_token });
+  }
+
   const app = uwu.uws.App({});
 
   const __cwd = process.cwd();
@@ -68,7 +82,7 @@ process.nextTick(async () => {
           res.writeHeader('Content-Type', file_content_type);
           if (url_pathname === '/index.html') {
             let html = fs.readFileSync(file_path, { encoding: 'utf-8' });
-            html = html.replace('CRESTFALL_DEFAULT_TOKEN = null', `CRESTFALL_DEFAULT_TOKEN = ${''}`);
+            html = html.replace('CRESTFALL_ANON_TOKEN = null', `CRESTFALL_ANON_TOKEN = '${anon_token}'`);
             res.write(html);
           } else {
             res.write(fs.readFileSync(file_path));

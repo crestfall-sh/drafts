@@ -16,7 +16,7 @@ import assert from 'modules/assert.mjs';
 export const request = async (options) => {
   assert(options instanceof Object);
   assert(typeof options.protocol === 'string');
-  assert(typeof options.host === 'string');
+  assert(typeof options.hostname === 'string');
   assert(typeof options.port === 'number');
   assert(typeof options.token === 'string');
   assert(options.method === undefined || typeof options.method === 'string');
@@ -35,7 +35,7 @@ export const request = async (options) => {
   if (options.headers instanceof Object) {
     Object.assign(request_headers, options.headers);
   }
-  const request_url = new URL(`${options.protocol}://${options.host}:${options.port}`);
+  const request_url = new URL(`${options.protocol}://${options.hostname}:${options.port}`);
   request_url.pathname = options.pathname;
   if (options.search instanceof Object) {
     request_url.search = new URLSearchParams(options.search).toString();
@@ -62,15 +62,15 @@ export const request = async (options) => {
 
 /**
  * @param {string} protocol
- * @param {string} host
+ * @param {string} hostname
  * @param {number} port
  * @param {string} token
  * @param {string} user_id
  * @returns {Promise<string[]>}
  */
-export const read_authorization_scopes = async (protocol, host, port, token, user_id) => {
+export const read_authorization_scopes = async (protocol, hostname, port, token, user_id) => {
   assert(typeof protocol === 'string');
-  assert(typeof host === 'string');
+  assert(typeof hostname === 'string');
   assert(typeof port === 'number');
   assert(typeof token === 'string');
   assert(typeof user_id === 'string' || user_id === null);
@@ -88,7 +88,7 @@ export const read_authorization_scopes = async (protocol, host, port, token, use
   /**
    * @type {import('./postgrest').response<assignment[]>}
    */
-  const response = await request({ protocol, host, port, token, method, pathname, search });
+  const response = await request({ protocol, hostname, port, token, method, pathname, search });
   assert(response.status === 200);
   assert(response.body instanceof Array);
   const scopes = new Set();

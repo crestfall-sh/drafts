@@ -88,7 +88,7 @@ const sign_up = async (header_authorization_token, email, password) => {
      */
     const response = await postgrest.request({
       protocol: 'http',
-      host: '0.0.0.0',
+      hostname: '0.0.0.0',
       port: 5433,
       token: auth_admin_token,
       pathname: '/users',
@@ -138,7 +138,7 @@ const sign_up = async (header_authorization_token, email, password) => {
      */
     const response = await postgrest.request({
       protocol: 'http',
-      host: '0.0.0.0',
+      hostname: '0.0.0.0',
       port: 5433,
       token: auth_admin_token,
       pathname: '/users',
@@ -193,7 +193,7 @@ const sign_in = async (header_authorization_token, email, password) => {
      */
     const response = await postgrest.request({
       protocol: 'http',
-      host: '0.0.0.0',
+      hostname: '0.0.0.0',
       port: 5433,
       token: auth_admin_token,
       pathname: '/users',
@@ -339,6 +339,7 @@ process.nextTick(async () => {
     response.headers.set('Access-Control-Allow-Methods', access_control_request_method);
     response.headers.set('Access-Control-Allow-Headers', access_control_allow_headers.join(','));
     response.headers.set('Access-Control-Max-Age', '300');
+    console.log({ response });
   }));
 
   app.post('/sign-up', uwu.use_middleware(async (response, request) => {
