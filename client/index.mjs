@@ -108,7 +108,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
       'Authorization': `Bearer ${request_token}`,
     };
     const request_body = JSON.stringify({});
-    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
+    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body, mode: 'cors' });
     assert(response.headers.has('content-type') === true);
     assert(response.headers.get('content-type').includes('application/json') === true);
     const status = response.status;
@@ -182,7 +182,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
       'Authorization': `Bearer ${request_token}`,
     };
     const request_body = JSON.stringify({ email: email, password: password });
-    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
+    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body, mode: 'cors' });
     assert(response.headers.has('content-type') === true);
     assert(response.headers.get('content-type').includes('application/json') === true);
     const status = response.status;
@@ -215,7 +215,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
       'Authorization': `Bearer ${request_token}`,
     };
     const request_body = JSON.stringify({ email: email, password: password });
-    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body });
+    const response = await fetch(request_url, { method: request_method, headers: request_headers, body: request_body, mode: 'cors' });
     assert(response.headers.has('content-type') === true);
     assert(response.headers.get('content-type').includes('application/json') === true);
     const status = response.status;

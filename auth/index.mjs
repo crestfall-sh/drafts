@@ -327,6 +327,7 @@ process.nextTick(async () => {
   });
 
   app.options('/*', uwu.use_middleware(async (response, request) => {
+    console.log({ request });
     response.status = 204;
     const access_control_request_method = request.headers.get('access-control-request-method');
     const origin = request.headers.get('origin');
