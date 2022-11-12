@@ -51,6 +51,7 @@ export const request = async (options) => {
     headers: request_headers,
     body: request_body,
     mode: 'cors',
+    credentials: 'include',
   });
   assert(response.headers.has('content-type') === true);
   assert(response.headers.get('content-type').includes('application/json') === true || response.headers.get('content-type').includes('application/openapi+json') === true);

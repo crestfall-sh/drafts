@@ -319,9 +319,11 @@ process.nextTick(async () => {
 
   const app = uwu.uws.App({});
 
-  app.get('/tokens/anon', (res) => {
+  app.get('/tokens/anon', (res, req) => {
     res.writeStatus('200');
     res.writeHeader('Content-Type', 'text/plain; charset=utf-8');
+    res.writeHeader('Access-Control-Allow-Origin', req.getHeader('origin'));
+    res.writeHeader('Access-Control-Allow-Credentials', 'true');
     res.write(anon_token);
     res.end();
   });
@@ -339,12 +341,14 @@ process.nextTick(async () => {
     response.headers.set('Access-Control-Allow-Origin', origin);
     response.headers.set('Access-Control-Allow-Methods', access_control_request_method);
     response.headers.set('Access-Control-Allow-Headers', access_control_allow_headers.join(','));
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.headers.set('Access-Control-Max-Age', '300');
     console.log({ response });
   }));
 
   app.post('/sign-up', uwu.use_middleware(async (response, request) => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.json = { data: null, error: null };
     try {
       assert(request.json instanceof Object);
@@ -376,6 +380,7 @@ process.nextTick(async () => {
 
   app.post('/sign-in', uwu.use_middleware(async (response, request) => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.json = { data: null, error: null };
     try {
       assert(request.json instanceof Object);
@@ -407,6 +412,7 @@ process.nextTick(async () => {
 
   app.post('/refresh', uwu.use_middleware(async (response, request) => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.json = { data: null, error: null };
     try {
       assert(request.json instanceof Object);
@@ -442,6 +448,8 @@ process.nextTick(async () => {
    * @type {import('modules/uwu').middleware}
    */
   const serve_404 = async (response, request) => {
+    response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
     const error = { request, name: 'Not Found', code: 'ERR_NOT_FOUND', message: null, stack: null };
     response.status = 404;
     response.json = { data: null, error };
