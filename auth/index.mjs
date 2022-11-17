@@ -16,47 +16,17 @@ import * as uwu from 'modules/uwu.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import { full_casefold_normalize_nfkc } from 'modules/casefold.mjs';
 import * as postgrest from '../client/postgrest.mjs';
-import * as crestfall_utils from './utils.mjs';
+import * as utils from './utils.mjs';
+import * as scrypt from './scrypt.mjs';
 import env from '../env.mjs';
-
-const scrypt_length = 64;
-
-/**
- * - https://words.filippo.io/the-scrypt-parameters/
- * @type {import('crypto').ScryptOptions}
- */
-const scrypt_options = { N: 2 ** 15, p: 1, maxmem: 128 * (2 ** 16) * 8 };
-
-/**
- * @param {string} password utf-8 nfkc
- * @param {string} password_salt hex-encoded
- * @returns {Promise<Buffer>}
- */
-const scrypt = async (password, password_salt) => {
-  assert(typeof password === 'string');
-  assert(typeof password_salt === 'string');
-  /**
-   * @type {Buffer}
-   */
-  const password_key_buffer = await new Promise((resolve, reject) => {
-    crypto.scrypt(Buffer.from(password), Buffer.from(password_salt, 'hex'), scrypt_length, scrypt_options, (error, derived_key) => {
-      if (error instanceof Error) {
-        reject(error);
-        return;
-      }
-      resolve(derived_key);
-    });
-  });
-  return password_key_buffer;
-};
 
 const refresh_tokens = new Set();
 
 const secret_b64 = env.get('PGRST_JWT_SECRET');
 
-const anon_token = await crestfall_utils.create_token(secret_b64, { exp: null, role: 'anon' });
-const public_admin_token = await crestfall_utils.create_token(secret_b64, { exp: null, role: 'public_admin' });
-const auth_admin_token = await crestfall_utils.create_token(secret_b64, { exp: null, role: 'auth_admin' });
+const anon_token = await utils.create_token(secret_b64, { exp: null, role: 'anon' });
+const public_admin_token = await utils.create_token(secret_b64, { exp: null, role: 'public_admin' });
+const auth_admin_token = await utils.create_token(secret_b64, { exp: null, role: 'auth_admin' });
 
 /**
  * @param {string} user_id
@@ -112,8 +82,8 @@ const sign_up = async (header_authorization_token, email, password) => {
   // [x] Create user account and sign-in
   {
     const verification_code = crypto.randomBytes(64).toString('hex');
-    const password_salt = crypto.randomBytes(32).toString('hex');
-    const password_key_buffer = await scrypt(password, password_salt);
+    const password_salt = scrypt.salt();
+    const password_key_buffer = scrypt.derive(password, password_salt);
     const password_key = password_key_buffer.toString('hex');
     /**
      * @type {user}
@@ -164,7 +134,7 @@ const sign_up = async (header_authorization_token, email, password) => {
     user.password_salt = null;
     user.password_key = null;
     const scopes = await read_scopes(user.id);
-    const token = await crestfall_utils.create_token(secret_b64, {
+    const token = await utils.create_token(secret_b64, {
       sub: user.id,
       role: 'public_user',
       email: user.email,
@@ -220,15 +190,15 @@ const sign_in = async (header_authorization_token, email, password) => {
     assert(typeof user.password_salt === 'string');
     assert(typeof user.password_key === 'string');
     const user_password_key_buffer = Buffer.from(user.password_key, 'hex');
-    const password_key_buffer = await scrypt(password, user.password_salt);
-    assert(crypto.timingSafeEqual(user_password_key_buffer, password_key_buffer) === true, 'INVALID_EMAIL_OR_PASSWORD');
+    const password_key_buffer = scrypt.derive(password, user.password_salt);
+    assert(scrypt.compare(user_password_key_buffer, password_key_buffer) === true, 'INVALID_EMAIL_OR_PASSWORD');
     user.invitation_code = null;
     user.verification_code = null;
     user.recovery_code = null;
     user.password_salt = null;
     user.password_key = null;
     const scopes = await read_scopes(user.id);
-    const token = await crestfall_utils.create_token(secret_b64, {
+    const token = await utils.create_token(secret_b64, {
       sub: user.id,
       role: 'public_user',
       email: user.email,
@@ -328,7 +298,7 @@ process.nextTick(async () => {
     res.end();
   });
 
-  app.options('/*', uwu.use_middleware(async (response, request) => {
+  app.options('/*', uwu.use(async (response, request) => {
     console.log({ request });
     response.status = 204;
     const access_control_request_method = request.headers.get('access-control-request-method');
@@ -346,7 +316,7 @@ process.nextTick(async () => {
     console.log({ response });
   }));
 
-  app.post('/sign-up', uwu.use_middleware(async (response, request) => {
+  app.post('/sign-up', uwu.use(async (response, request) => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.json = { data: null, error: null };
@@ -378,7 +348,7 @@ process.nextTick(async () => {
     }
   }));
 
-  app.post('/sign-in', uwu.use_middleware(async (response, request) => {
+  app.post('/sign-in', uwu.use(async (response, request) => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.json = { data: null, error: null };
@@ -410,7 +380,7 @@ process.nextTick(async () => {
     }
   }));
 
-  app.post('/refresh', uwu.use_middleware(async (response, request) => {
+  app.post('/refresh', uwu.use(async (response, request) => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));
     response.headers.set('Access-Control-Allow-Credentials', 'true');
     response.json = { data: null, error: null };
@@ -428,7 +398,7 @@ process.nextTick(async () => {
       assert(refresh_tokens.has(request_token.payload.refresh_token) === true);
       refresh_tokens.delete(request_token.payload.refresh_token);
       const scopes = await read_scopes(request_token.payload.sub);
-      const token = await crestfall_utils.create_token(secret_b64, {
+      const token = await utils.create_token(secret_b64, {
         sub: request_token.payload.sub,
         role: request_token.payload.role,
         email: request_token.payload.email,
@@ -454,13 +424,13 @@ process.nextTick(async () => {
     response.status = 404;
     response.json = { data: null, error };
   };
-  app.get('/*', uwu.use_middleware(serve_404));
-  app.post('/*', uwu.use_middleware(serve_404));
-  app.patch('/*', uwu.use_middleware(serve_404));
-  app.put('/*', uwu.use_middleware(serve_404));
-  app.del('/*', uwu.use_middleware(serve_404));
+  app.get('/*', uwu.use(serve_404));
+  app.post('/*', uwu.use(serve_404));
+  app.patch('/*', uwu.use(serve_404));
+  app.put('/*', uwu.use(serve_404));
+  app.del('/*', uwu.use(serve_404));
 
-  await uwu.serve_http(app, uwu.port_access_types.EXCLUSIVE, 9090);
+  await uwu.http(app, uwu.port_access_types.EXCLUSIVE, 9090);
 
   console.log('Auth server listening at port 9090.');
 });
