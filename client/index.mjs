@@ -121,10 +121,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
     }
   };
 
-  /**
-   * @param {Event} event
-   */
-  const on_visibilitychange = (event) => {
+  const on_visibilitychange = () => {
     console.log('crestfall: on_visibilitychange..');
     if (typeof authenticated_token === 'string') {
       if (document.visibilityState === 'visible') {
@@ -163,8 +160,10 @@ export const initialize = (protocol, hostname, port, anon_token) => {
       }
     }
     if (typeof authenticated_token === 'string') {
+      console.log('crestfall: signed-in');
       queueMicrotask(enable_interval);
     } else {
+      console.log('crestfall: signed-out');
       queueMicrotask(disable_interval);
     }
     queueMicrotask(broadcast);
@@ -186,13 +185,12 @@ export const initialize = (protocol, hostname, port, anon_token) => {
           if (now < exp) {
             authenticated_token = token;
             authenticated_token_data = token_data;
-            queueMicrotask(save);
           } else {
             authenticated_token = null;
             authenticated_token_data = null;
-            queueMicrotask(save);
           }
         }
+        queueMicrotask(save);
       }
     }
   };
