@@ -16,17 +16,15 @@ import * as uwu from 'modules/uwu.mjs';
 import * as hs256 from 'modules/hs256.mjs';
 import { full_casefold_normalize_nfkc } from 'modules/casefold.mjs';
 import * as postgrest from '../client/postgrest.mjs';
-import * as utils from './utils.mjs';
+import * as tokens from './tokens.mjs';
 import * as scrypt from './scrypt.mjs';
 import env from '../env.mjs';
 
-const refresh_tokens = new Set();
-
 const secret_b64 = env.get('PGRST_JWT_SECRET');
 
-const anon_token = await utils.create_token(secret_b64, { exp: null, role: 'anon' });
-const public_admin_token = await utils.create_token(secret_b64, { exp: null, role: 'public_admin' });
-const auth_admin_token = await utils.create_token(secret_b64, { exp: null, role: 'auth_admin' });
+const anon_token = await tokens.create(secret_b64, { exp: null, role: 'anon' });
+const public_admin_token = await tokens.create(secret_b64, { exp: null, role: 'public_admin' });
+const auth_admin_token = await tokens.create(secret_b64, { exp: null, role: 'auth_admin' });
 
 /**
  * @param {string} user_id
@@ -134,7 +132,7 @@ const sign_up = async (header_authorization_token, email, password) => {
     user.password_salt = null;
     user.password_key = null;
     const scopes = await read_scopes(user.id);
-    const token = await utils.create_token(secret_b64, {
+    const token = await tokens.create(secret_b64, {
       sub: user.id,
       role: 'public_user',
       email: user.email,
@@ -198,7 +196,7 @@ const sign_in = async (header_authorization_token, email, password) => {
     user.password_salt = null;
     user.password_key = null;
     const scopes = await read_scopes(user.id);
-    const token = await utils.create_token(secret_b64, {
+    const token = await tokens.create(secret_b64, {
       sub: user.id,
       role: 'public_user',
       email: user.email,
@@ -395,10 +393,10 @@ process.nextTick(async () => {
       assert(request_token.payload.iss === 'crestfall');
       assert(request_token.payload.aud === 'crestfall');
       assert(typeof request_token.payload.refresh_token === 'string');
-      assert(refresh_tokens.has(request_token.payload.refresh_token) === true);
-      refresh_tokens.delete(request_token.payload.refresh_token);
+      assert(tokens.refresh_tokens.has(request_token.payload.refresh_token) === true);
+      tokens.refresh_tokens.delete(request_token.payload.refresh_token);
       const scopes = await read_scopes(request_token.payload.sub);
-      const token = await utils.create_token(secret_b64, {
+      const token = await tokens.create(secret_b64, {
         sub: request_token.payload.sub,
         role: request_token.payload.role,
         email: request_token.payload.email,

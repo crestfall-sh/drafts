@@ -51,34 +51,65 @@ export const initialize = (protocol, hostname, port, anon_token) => {
   let authenticated_token_data = null;
 
   /**
-   * @type {NodeJS.Timer|number}
+   * @type {number}
    */
   let interval = null;
 
   /**
-   * @type {import('./index').listeners}
+   * @type {import('./index').subscribers}
    */
-  const listeners = new Set();
+  const subscribers = new Set();
 
-  const load = () => {
-    if (typeof window !== 'undefined' && window instanceof Object) {
-      if (window.localStorage instanceof Object) {
-        const crestfall_authenticated_token = window.localStorage.getItem('crestfall_authenticated_token');
-        if (typeof crestfall_authenticated_token === 'string') {
-          authenticated_token = crestfall_authenticated_token;
-          authenticated_token_data = hs256.read_token(authenticated_token);
+  /**
+   * @type {import('./index').subscribe}
+   */
+  const subscribe = (callback) => {
+    console.log('crestfall: subscribing..');
+    assert(callback instanceof Function);
+    subscribers.add(callback);
+    callback(authenticated_token, authenticated_token_data);
+  };
+
+  /**
+   * @type {import('./index').subscribe}
+   */
+  const unsubscribe = (callback) => {
+    console.log('crestfall: unsubscribing..');
+    assert(callback instanceof Function);
+    subscribers.delete(callback);
+  };
+
+  const enable_interval = () => {
+    if (interval === null) {
+      console.log('crestfall: enabling interval..');
+      interval = setInterval(async () => {
+        try {
+          await check_refresh_token();
+        } catch (e) {
+          console.error(e);
         }
-      }
+      }, 5000);
     }
-    if (listeners.size > 0) {
-      listeners.forEach((listener) => {
+  };
+
+  const disable_interval = () => {
+    if (typeof interval === 'number') {
+      console.log('crestfall: disabling interval..');
+      clearInterval(interval);
+    }
+  };
+
+  const broadcast = () => {
+    console.log('crestfall: broadcasting..');
+    if (subscribers.size > 0) {
+      subscribers.forEach((listener) => {
         listener(authenticated_token, authenticated_token_data);
       });
     }
   };
-  queueMicrotask(load);
 
   const save = () => {
+    console.log('crestfall: saving..');
     if (typeof window !== 'undefined' && window instanceof Object) {
       if (window.localStorage instanceof Object) {
         if (typeof authenticated_token === 'string') {
@@ -88,12 +119,41 @@ export const initialize = (protocol, hostname, port, anon_token) => {
         }
       }
     }
-    if (listeners.size > 0) {
-      listeners.forEach((listener) => {
-        listener(authenticated_token, authenticated_token_data);
-      });
+    if (typeof authenticated_token === 'string') {
+      queueMicrotask(enable_interval);
+    } else {
+      queueMicrotask(disable_interval);
+    }
+    queueMicrotask(broadcast);
+  };
+
+  const load = () => {
+    console.log('crestfall: loading..');
+    if (typeof window !== 'undefined' && window instanceof Object) {
+      if (window.localStorage instanceof Object) {
+        const crestfall_authenticated_token = window.localStorage.getItem('crestfall_authenticated_token');
+        if (typeof crestfall_authenticated_token === 'string') {
+          const token = crestfall_authenticated_token;
+          const token_data = hs256.read_token(token);
+          const exp = luxon.DateTime.fromSeconds(token_data.payload.exp);
+          assert(exp.isValid === true);
+          console.log(`crestfall: exp: ${exp.toISO()} (${exp.toRelative()})`);
+          const now = luxon.DateTime.now();
+          console.log(`crestfall: now: ${now.toISO()} (${now.toRelative()})`);
+          if (now < exp) {
+            authenticated_token = token;
+            authenticated_token_data = token_data;
+            queueMicrotask(save);
+          } else {
+            authenticated_token = null;
+            authenticated_token_data = null;
+            queueMicrotask(save);
+          }
+        }
+      }
     }
   };
+  queueMicrotask(load);
 
   /**
    * @type {import('./index').refresh_token}
@@ -136,11 +196,11 @@ export const initialize = (protocol, hostname, port, anon_token) => {
    */
   const check_refresh_token = async () => {
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
-    const token = hs256.read_token(authenticated_token);
-    assert(token instanceof Object);
-    assert(token.payload instanceof Object);
-    assert(typeof token.payload.exp === 'number');
-    const exp = luxon.DateTime.fromSeconds(token.payload.exp);
+    const token_data = hs256.read_token(authenticated_token);
+    assert(token_data instanceof Object);
+    assert(token_data.payload instanceof Object);
+    assert(typeof token_data.payload.exp === 'number');
+    const exp = luxon.DateTime.fromSeconds(token_data.payload.exp);
     assert(exp.isValid === true);
     const now = luxon.DateTime.now();
     if (exp <= now) {
@@ -154,23 +214,6 @@ export const initialize = (protocol, hostname, port, anon_token) => {
       await refresh_token();
     }
     return null;
-  };
-
-  const enable_interval = () => {
-    if (interval === null) {
-      interval = setInterval(async () => {
-        try {
-          await check_refresh_token();
-        } catch (e) {
-          console.error(e);
-        }
-      }, 5000);
-    }
-  };
-  const disable_interval = () => {
-    if (typeof interval === 'number') {
-      clearInterval(interval);
-    }
   };
 
   /**
@@ -205,7 +248,6 @@ export const initialize = (protocol, hostname, port, anon_token) => {
           authenticated_token = body.data.token;
           authenticated_token_data = hs256.read_token(authenticated_token);
           queueMicrotask(save);
-          queueMicrotask(enable_interval);
         }
       }
     }
@@ -244,7 +286,6 @@ export const initialize = (protocol, hostname, port, anon_token) => {
           authenticated_token = body.data.token;
           authenticated_token_data = hs256.read_token(authenticated_token);
           queueMicrotask(save);
-          queueMicrotask(enable_interval);
         }
       }
     }
@@ -281,7 +322,6 @@ export const initialize = (protocol, hostname, port, anon_token) => {
         email: `eq.${email}`,
       },
     });
-    console.log(JSON.stringify({ response }, null, 2));
     if (response.body instanceof Array) {
       if (response.body[0] instanceof Object) {
         return response.body[0];
@@ -356,7 +396,9 @@ export const initialize = (protocol, hostname, port, anon_token) => {
   };
 
   const client = {
-    listeners,
+    subscribers,
+    subscribe,
+    unsubscribe,
     refresh_token,
     check_refresh_token,
     sign_up,

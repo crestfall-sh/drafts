@@ -78,5 +78,7 @@ export type sign_up = (email: string, password: string) => auth_response<sign_up
 export type sign_in = (email: string, password: string) => auth_response<sign_in_response>;
 export type refresh_token = () => auth_response<refresh_token_response>;
 
-export type listener = (token: string, token_data: hs256.token_data) => void;
-export type listeners = Set<listener>;
+export type callback = (token: string, token_data: hs256.token_data) => void;
+export type subscribe = (callback: callback) => void;
+export type unsubscribe = (callback: callback) => void;
+export type subscribers = Set<callback>;

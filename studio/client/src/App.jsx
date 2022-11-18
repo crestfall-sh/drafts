@@ -30,14 +30,14 @@ const App = () => {
 
   React.useEffect(() => {
     /**
-     * @type {import('../../../client/index').listener}
+     * @type {import('../../../client/index').callback}
      */
-    const listener = (token, token_data) => {
+    const callback = (token, token_data) => {
       console.log({ token, token_data });
     };
-    client.listeners.add(listener);
+    client.subscribe(callback);
     return () => {
-      client.listeners.delete(listener);
+      client.unsubscribe(callback);
     };
   });
 
