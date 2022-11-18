@@ -81,7 +81,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
 
   const check_refresh_token = async () => {
     try {
-      console.log('crestfall: checking refresh token..');
+      console.log('crestfall: checking refresh token..', luxon.DateTime.now().toISO());
       assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
       const token_data = hs256.read_token(authenticated_token);
       assert(token_data instanceof Object);
@@ -121,23 +121,23 @@ export const initialize = (protocol, hostname, port, anon_token) => {
     }
   };
 
-  const on_visibilitychange = () => {
-    console.log('crestfall: on_visibilitychange..');
-    if (typeof authenticated_token === 'string') {
-      if (document.visibilityState === 'visible') {
-        queueMicrotask(check_refresh_token);
-        queueMicrotask(enable_interval);
-      } else {
-        queueMicrotask(disable_interval);
-      }
-    }
-  };
+  // const on_visibilitychange = () => {
+  //   console.log('crestfall: on_visibilitychange..');
+  //   if (typeof authenticated_token === 'string') {
+  //     if (document.visibilityState === 'visible') {
+  //       queueMicrotask(check_refresh_token);
+  //       queueMicrotask(enable_interval);
+  //     } else {
+  //       queueMicrotask(disable_interval);
+  //     }
+  //   }
+  // };
 
-  if (window instanceof Object) {
-    if (window.addEventListener instanceof Function) {
-      addEventListener('visibilitychange', on_visibilitychange);
-    }
-  }
+  // if (window instanceof Object) {
+  //   if (window.addEventListener instanceof Function) {
+  //     addEventListener('visibilitychange', on_visibilitychange);
+  //   }
+  // }
 
   const broadcast = () => {
     console.log('crestfall: broadcasting..');
