@@ -51,7 +51,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
   let authenticated_token_data = null;
 
   /**
-   * @type {number}
+   * @type {NodeJS.Timer|number}
    */
   let interval = null;
 
@@ -80,11 +80,31 @@ export const initialize = (protocol, hostname, port, anon_token) => {
   };
 
   const enable_interval = () => {
+    console.log('crestfall: enabling interval..');
     if (interval === null) {
-      console.log('crestfall: enabling interval..');
       interval = setInterval(async () => {
         try {
-          await check_refresh_token();
+          console.log('crestfall: checking refresh token..');
+          assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
+          const token_data = hs256.read_token(authenticated_token);
+          assert(token_data instanceof Object);
+          assert(token_data.payload instanceof Object);
+          assert(typeof token_data.payload.exp === 'number');
+          const exp = luxon.DateTime.fromSeconds(token_data.payload.exp);
+          assert(exp.isValid === true);
+          const now = luxon.DateTime.now();
+          if (now < exp) {
+            const refresh_window = exp.minus({ minutes: 3 });
+            if (refresh_window < now) {
+              await refresh_token();
+            }
+            return;
+          }
+          if (exp <= now) {
+            authenticated_token = null;
+            authenticated_token_data = null;
+            queueMicrotask(save);
+          }
         } catch (e) {
           console.error(e);
         }
@@ -93,8 +113,8 @@ export const initialize = (protocol, hostname, port, anon_token) => {
   };
 
   const disable_interval = () => {
+    console.log('crestfall: disabling interval..');
     if (typeof interval === 'number') {
-      console.log('crestfall: disabling interval..');
       clearInterval(interval);
     }
   };
@@ -159,6 +179,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
    * @type {import('./index').refresh_token}
    */
   const refresh_token = async () => {
+    console.log('crestfall: refreshing token..');
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     const request_method = 'POST';
     const request_url = `${protocol}://${hostname}:${port}/refresh`;
@@ -192,34 +213,10 @@ export const initialize = (protocol, hostname, port, anon_token) => {
   };
 
   /**
-   * Note: not necessary for sign-in and sign-up
-   */
-  const check_refresh_token = async () => {
-    assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
-    const token_data = hs256.read_token(authenticated_token);
-    assert(token_data instanceof Object);
-    assert(token_data.payload instanceof Object);
-    assert(typeof token_data.payload.exp === 'number');
-    const exp = luxon.DateTime.fromSeconds(token_data.payload.exp);
-    assert(exp.isValid === true);
-    const now = luxon.DateTime.now();
-    if (exp <= now) {
-      authenticated_token = null;
-      authenticated_token_data = null;
-      queueMicrotask(save);
-      throw new Error('ERR_TOKEN_EXPIRED_ALREADY_SIGNED_OUT');
-    }
-    const refresh_window = exp.minus({ minutes: 3 });
-    if (refresh_window < now) {
-      await refresh_token();
-    }
-    return null;
-  };
-
-  /**
    * @type {import('./index').sign_up}
    */
   const sign_up = async (email, password) => {
+    console.log('crestfall: signing-up..');
     assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
     assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
     assert(authenticated_token === null, 'ERR_ALREADY_SIGNED_IN');
@@ -258,6 +255,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
    * @type {import('./index').sign_in}
    */
   const sign_in = async (email, password) => {
+    console.log('crestfall: signing-in..');
     assert(typeof email === 'string', 'ERR_INVALID_EMAIL');
     assert(typeof password === 'string', 'ERR_INVALID_PASSWORD');
     assert(authenticated_token === null, 'ERR_ALREADY_SIGNED_IN');
@@ -293,6 +291,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
   };
 
   const sign_out = async () => {
+    console.log('crestfall: signing-out..');
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     authenticated_token = null;
     authenticated_token_data = null;
@@ -305,6 +304,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
    * @param {string} email
    */
   const read_user = async (email) => {
+    console.log('crestfall: reading user..');
     assert(typeof email === 'string');
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
     /**
@@ -335,6 +335,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
    * @param {string} role_id
    */
   const authorize = async (user_id, role_id) => {
+    console.log('crestfall: authorizing..');
     assert(typeof user_id === 'string');
     assert(typeof role_id === 'string');
     assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
@@ -362,6 +363,7 @@ export const initialize = (protocol, hostname, port, anon_token) => {
    * @param {string} assignment_id
    */
   const deauthorize = async (assignment_id) => {
+    console.log('crestfall: deauthorizing..');
     assert(typeof assignment_id === 'string');
     /**
      * @type {import('./postgrest').response<assignment[]>}
@@ -400,7 +402,6 @@ export const initialize = (protocol, hostname, port, anon_token) => {
     subscribe,
     unsubscribe,
     refresh_token,
-    check_refresh_token,
     sign_up,
     sign_in,
     sign_out,
