@@ -79,36 +79,38 @@ export const initialize = (protocol, hostname, port, anon_token) => {
     subscribers.delete(callback);
   };
 
+  const check_refresh_token = async () => {
+    try {
+      console.log('crestfall: checking refresh token..');
+      assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
+      const token_data = hs256.read_token(authenticated_token);
+      assert(token_data instanceof Object);
+      assert(token_data.payload instanceof Object);
+      assert(typeof token_data.payload.exp === 'number');
+      const exp = luxon.DateTime.fromSeconds(token_data.payload.exp);
+      assert(exp.isValid === true);
+      const now = luxon.DateTime.now();
+      if (now < exp) {
+        const refresh_window = exp.minus({ minutes: 3 });
+        if (refresh_window < now) {
+          await refresh_token();
+        }
+        return;
+      }
+      if (exp <= now) {
+        authenticated_token = null;
+        authenticated_token_data = null;
+        queueMicrotask(save);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const enable_interval = () => {
     console.log('crestfall: enabling interval..');
     if (interval === null) {
-      interval = setInterval(async () => {
-        try {
-          console.log('crestfall: checking refresh token..');
-          assert(typeof authenticated_token === 'string', 'ERR_ALREADY_SIGNED_OUT');
-          const token_data = hs256.read_token(authenticated_token);
-          assert(token_data instanceof Object);
-          assert(token_data.payload instanceof Object);
-          assert(typeof token_data.payload.exp === 'number');
-          const exp = luxon.DateTime.fromSeconds(token_data.payload.exp);
-          assert(exp.isValid === true);
-          const now = luxon.DateTime.now();
-          if (now < exp) {
-            const refresh_window = exp.minus({ minutes: 3 });
-            if (refresh_window < now) {
-              await refresh_token();
-            }
-            return;
-          }
-          if (exp <= now) {
-            authenticated_token = null;
-            authenticated_token_data = null;
-            queueMicrotask(save);
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }, 5000);
+      interval = setInterval(check_refresh_token, 5000);
     }
   };
 
@@ -118,6 +120,27 @@ export const initialize = (protocol, hostname, port, anon_token) => {
       clearInterval(interval);
     }
   };
+
+  /**
+   * @param {Event} event
+   */
+  const on_visibilitychange = (event) => {
+    console.log('crestfall: on_visibilitychange..');
+    if (typeof authenticated_token === 'string') {
+      if (document.visibilityState === 'visible') {
+        queueMicrotask(check_refresh_token);
+        queueMicrotask(enable_interval);
+      } else {
+        queueMicrotask(disable_interval);
+      }
+    }
+  };
+
+  if (window instanceof Object) {
+    if (window.addEventListener instanceof Function) {
+      addEventListener('visibilitychange', on_visibilitychange);
+    }
+  }
 
   const broadcast = () => {
     console.log('crestfall: broadcasting..');
