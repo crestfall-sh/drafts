@@ -111,3 +111,12 @@ GRANT EXECUTE ON FUNCTION auth.role() TO public;
 GRANT EXECUTE ON FUNCTION auth.email() TO public;
 
 GRANT USAGE ON SCHEMA auth TO anon, public_user, public_service;
+
+-- INSERT user admin@crestfall.sh
+-- admin@crestfall.sh : test1234
+INSERT INTO auth.users ("email", "password_salt", "password_key")
+VALUES (
+	'admin@crestfall.sh',
+	'59b4e56da3cb71fbb6ca883b41ae415005367c1c598fba3cc0c0a360ad5b6868',
+	'2e866eac82cc13ed55e849d45c99f083dd75da7664882620ec66a0376f13f16ff723443d129232fe5c55ea58d7a62169557e66662cac9fe0d4ca1c6586a469f5'
+);

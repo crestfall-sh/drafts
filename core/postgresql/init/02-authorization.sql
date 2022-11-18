@@ -144,12 +144,6 @@ FOR EACH ROW EXECUTE PROCEDURE public.auth_users_after_insert_function();
 INSERT INTO public.users
 SELECT "id", "email" FROM auth.users;
 
--- INSERT users alice@example.com, bob@example.com
-INSERT INTO public.users ("id", "email")
-VALUES
-  ('00000000-0000-0000-0000-000000000000', 'alice@example.com'),
-  ('00000000-0000-0000-0000-000000000001', 'bob@example.com');
-
 -- INSERT roles administrator, moderator
 INSERT INTO public.roles ("name")
 VALUES ('administrator'), ('moderator');
@@ -170,18 +164,11 @@ VALUES (
   'Crestfall Authorization for Moderators'
 );
 
--- INSERT assignments alice@example.com administrator
+-- INSERT assignments admin@crestfall.sh administrator
 INSERT INTO public.assignments ("user_id", "role_id")
 VALUES (
-  (SELECT "id" FROM public.users WHERE "email" = 'alice@example.com'),
+  (SELECT "id" FROM public.users WHERE "email" = 'admin@crestfall.sh'),
   (SELECT "id" FROM public.roles WHERE "name" = 'administrator')
-);
-
--- INSERT assignments bob@example.com administrator
-INSERT INTO public.assignments ("user_id", "role_id")
-VALUES (
-  (SELECT "id" FROM public.users WHERE "email" = 'bob@example.com'),
-  (SELECT "id" FROM public.roles WHERE "name" = 'moderator')
 );
 
 SELECT
