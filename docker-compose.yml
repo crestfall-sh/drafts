@@ -1,0 +1,62 @@
+# sudo docker compose up --force-recreate --build
+
+# https://www.openpolicyagent.org/docs/latest/deployments/#docker
+# https://www.openpolicyagent.org/docs/latest/misc-disk/
+# https://www.openpolicyagent.org/docs/latest/external-data/
+# https://www.openpolicyagent.org/docs/latest/rest-api/
+
+version: '3.8'
+services:
+  openpolicyagent:
+    image: openpolicyagent/opa:latest-rootless
+    restart: "no"
+    network_mode: "host" # 8181
+    command: "run --server"
+  postgresql:
+    image: postgres:14
+    restart: "no"
+    network_mode: "host" # 5432
+    command: "postgres"
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER:?error}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?error}
+    volumes:
+      - ./postgresql/entrypoint:/docker-entrypoint-initdb.d
+      - ./volumes/postgresql/data:/var/lib/postgresql/data
+  postgrest:
+    image: postgrest/postgrest
+    network_mode: "host" # 5433
+    environment:
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:?error}
+      PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:?error}
+      PGRST_DB_URI: postgres://${POSTGRES_USER:?error}:${POSTGRES_PASSWORD:?error}@0.0.0.0:5432/postgres
+      PGRST_SERVER_PORT: 5433
+      PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:?error}
+      PGRST_JWT_SECRET_IS_BASE64: ${PGRST_JWT_SECRET_IS_BASE64:?error}
+      PGRST_JWT_AUD: crestfall
+    depends_on:
+      - postgresql
+  typesense:
+    image: typesense/typesense:0.23.1
+    network_mode: "host" # 8108
+    environment:
+      TYPESENSE_DATA_DIR: /var/lib/typesense/data
+      TYPESENSE_API_KEY: ${TYPESENSE_API_KEY:?error}
+      TYPESENSE_API_PORT: 8108
+      TYPESENSE_ENABLE_CORS: true
+    volumes:
+      - ./volumes/typesense/data:/var/lib/typesense/data
+  caddy:
+    image: caddy:2
+    network_mode: "host" # 80, 443, 443/udp
+    environment:
+      TYPESENSE_SEARCH_ONLY_KEY: ${TYPESENSE_SEARCH_ONLY_KEY:?error}
+    volumes:
+      - ./volumes/caddy/data:/data
+      - ./volumes/caddy/config:/config
+      - ./volumes/caddy/logs:/var/log/caddy/
+      - ./caddy/production/Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - typesense
