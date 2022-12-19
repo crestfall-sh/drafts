@@ -1,0 +1,29 @@
+{
+  log {
+    output file /var/log/access.log
+    format json
+  }
+}
+
+data.crestfall.sh {
+  handle {
+    header {
+      Cache-Control "no-cache"
+      Strict-Transport-Security "max-age=63072000"
+      defer
+    }
+    rewrite /typesense/psgc-regions /collections/psgc-regions/documents/search?query_by=name_extended&{query}
+    rewrite /typesense/psgc-provinces /collections/psgc-provinces/documents/search?query_by=name_extended&{query}
+    rewrite /typesense/psgc-cities /collections/psgc-cities/documents/search?query_by=name_extended&{query}
+    rewrite /typesense/psgc-municipalities /collections/psgc-municipalities/documents/search?query_by=name_extended&{query}
+    rewrite /typesense/psgc-submunicipalities /collections/psgc-submunicipalities/documents/search?query_by=name_extended&{query}
+    rewrite /typesense/psgc-barangays /collections/psgc-barangays/documents/search?query_by=name_extended&{query}
+    reverse_proxy 0.0.0.0:8108 {
+      header_up X-TYPESENSE-API-KEY {$TYPESENSE_SEARCH_ONLY_KEY}
+    }
+  }
+  tls joshxyzhimself@gmail.com {
+    protocols tls1.2 tls1.3
+    ciphers TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256
+  }
+}

@@ -1,0 +1,17 @@
+
+{
+  debug
+  auto_https off
+  log {
+    format console
+  }
+}
+
+# note: exclude trailing slash; correct: http://localhost; incorrect: http://localhost/
+http://localhost, http://0.0.0.0 {
+  handle {
+    reverse_proxy 0.0.0.0:8108 {
+      header_up X-TYPESENSE-API-KEY {$TYPESENSE_SEARCH_ONLY_KEY}
+    }
+  }
+}
