@@ -24,8 +24,8 @@ sudo docker compose up --force-recreate --build
 - [ ] 00-extensions.sql
 - [ ] 01-authentication.sql: private.users
 - [ ] 02-authorization.sql: public.users, public.roles, public.permissions, public.assignments
-- [ ] 03-settings.sql: public.settings, private.settings
-- [ ] 04-app.sql
+- [ ] 03-settings.sql: private.settings, public.settings
+- [ ] 04-app.sql: public.tasks
 
 #### Logs
 
