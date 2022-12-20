@@ -413,7 +413,7 @@ process.nextTick(async () => {
   }));
 
   /**
-   * @type {import('modules/uwu').middleware}
+   * @type {import('modules/uwu').middleware<any>}
    */
   const serve_404 = async (response, request) => {
     response.headers.set('Access-Control-Allow-Origin', request.headers.get('origin'));

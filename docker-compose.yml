@@ -38,6 +38,15 @@ services:
       TYPESENSE_ENABLE_CORS: true
     volumes:
       - ./volumes/typesense/data:/var/lib/typesense/data
+  auth:
+    build:
+      context: ./ # path of parent directory
+      dockerfile: ./auth/Dockerfile # path relative to context
+    restart: "no"
+    network_mode: "host" # 9090
+    command: node ./index.mjs
+    depends_on:
+      - postgrest
   caddy:
     image: caddy:2
     network_mode: "host" # 80, 443, 443/udp
