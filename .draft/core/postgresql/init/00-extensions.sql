@@ -1,9 +1,10 @@
 
 CREATE SCHEMA IF NOT EXISTS "extensions";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
-CREATE EXTENSION IF NOT EXISTS "http" WITH SCHEMA "extensions";
-CREATE EXTENSION IF NOT EXISTS "pgaudit" WITH SCHEMA "extensions";
+
+-- CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
+-- CREATE EXTENSION IF NOT EXISTS "http" WITH SCHEMA "extensions";
+-- CREATE EXTENSION IF NOT EXISTS "pgaudit" WITH SCHEMA "extensions";
 -- SELECT (unnest(headers)).* FROM extensions.http_get('https://example.com/');
 
 -- CREATE EXTENSION IF NOT EXISTS "pg_cron" WITH SCHEMA "extensions";
