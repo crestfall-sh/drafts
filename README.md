@@ -13,10 +13,11 @@ sudo docker compose up --force-recreate --build
 
 #### Docker Containers
 
-- [ ] PostgreSQL Server
-- [ ] PostgREST Server
-- [ ] TypeSense Server
-- [ ] Authentication & Authorization Server
+- [ ] PostgreSQL Server: relational database
+- [ ] PostgREST Server: relational database with REST API
+- [ ] TypeSense Server: search database with REST API
+- [ ] Authentication Server: for user sign-up, sign-in, sign-out
+- [ ] Authorization Server
 - [ ] Caddy Server
 
 #### PostgreSQL Schema & Tables
@@ -38,4 +39,8 @@ sudo docker compose up --force-recreate --build
 
 #### Docker Containers
 
-- [ ] 
+- [ ] Reverse Proxy Server: Caddy / HAProxy / Envoy
+- [ ] Authorization Server: Keycloak / Open Policy Agent
+- [ ] S3 Storage Server
+- [ ] Web Hosting Server
+- [ ] Studio Server
