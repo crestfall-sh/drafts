@@ -1,3 +1,43 @@
+-- Description::
+-- This is our default entrypoint for our PostgreSQL instance.
+-- 
+-- Checklist
+-- [x] Extensions
+--   [x] uuid-ossp
+-- [ ] Roles
+  -- [ ] anon
+	-- [ ] user
+	-- [ ] administrator
+-- [ ] public (schema)
+  -- [ ] public.tasks
+		-- note: 
+		-- [ ] GRANT SELECT for anon
+		-- [ ] GRANT SELECT INSERT UPDATE DELETE for user
+	-- [ ] public.users
+		-- [ ] GRANT SELECT 
+	-- [ ] public.roles
+	-- [ ] public.permissions
+	-- [ ] public.assignments
+	-- [ ] public.settings
+-- [ ] private (schema)
+	-- [ ] private.users
+	-- [ ] private.settings
+
+		-- [ ] GRANT SELECT | INSERT | UPDATE | DELETE | TRUNCATE | REFERENCES | TRIGGER
+-- [ ] Authentication
+--   [ ] "public" schema 
+--   [ ] "authenticated" schema
+--   [ ] "internal" schema
+--   [ ] table: public.users
+-- [ ] Authorization
+-- [ ] Settings
+-- [ ] Application
+-- 
+-- References:
+-- https://github.com/supabase/supabase/blob/master/docker/docker-compose.yml
+-- https://github.com/supabase/postgres/tree/develop/migrations/db/init-scripts
+-- https://github.com/supabase/postgres/blob/develop/migrations/schema.sql
+
 -- extensions
 CREATE SCHEMA IF NOT EXISTS "extensions";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
