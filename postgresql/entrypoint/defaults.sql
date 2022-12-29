@@ -1,5 +1,8 @@
 -- Description::
 -- This is our default entrypoint for our PostgreSQL instance.
+--
+-- References
+-- https://www.enterprisedb.com/postgres-tutorials/how-implement-column-and-row-level-security-postgresql
 -- 
 -- Checklist
 -- [x] Extensions
