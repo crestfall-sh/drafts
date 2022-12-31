@@ -1,6 +1,10 @@
-# sudo docker compose up --force-recreate --build
+# 
 # sudo docker compose build --no-cache
+# sudo docker compose create --force-recreate
 # sudo docker compose up
+# 
+# sudo docker-compose up --build --force-recreate
+# 
 # sudo docker compose down
 # sudo docker compose rm
 
