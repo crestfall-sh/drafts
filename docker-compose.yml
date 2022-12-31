@@ -1,4 +1,8 @@
 # sudo docker compose up --force-recreate --build
+# sudo docker compose build --no-cache
+# sudo docker compose up
+# sudo docker compose down
+# sudo docker compose rm
 
 version: '3.8'
 services:
@@ -12,8 +16,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:?error}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?error}
     volumes:
-      - ./postgresql/entrypoint:/docker-entrypoint-initdb.d
-      - ./volumes/postgresql/data:/var/lib/postgresql/data
+     - ./volumes/postgresql/data:/var/lib/postgresql/data
+     - ./postgresql/entrypoint:/docker-entrypoint-initdb.d
   postgrest:
     image: postgrest/postgrest
     network_mode: "host" # 5433
