@@ -11,10 +11,12 @@
 version: '3.8'
 services:
   postgresql:
-    image: postgres:14
+    build:
+      context: .
+      dockerfile: ./postgresql/Dockerfile
     restart: "no"
     network_mode: "host" # 5432
-    command: "postgres"
+    command: postgres -c shared_preload_libraries=pgaudit,pgsodium
     environment:
       POSTGRES_DB: postgres
       POSTGRES_USER: ${POSTGRES_USER:?error}
