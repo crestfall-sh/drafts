@@ -80,7 +80,7 @@ CREATE TABLE private.users (
     "updated_at" timestamptz DEFAULT now() NOT NULL,
     UNIQUE("email")
 );
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE private.users ENABLE ROW LEVEL SECURITY;
 
 CREATE TABLE public.users (
   "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
