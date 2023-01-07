@@ -50,3 +50,70 @@ ALTER ROLE anon SET statement_timeout = '5s';
 GRANT USAGE ON SCHEMA public TO anon; -- schema-level permissions
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon; -- grant for table-level, rls for row-level permissions
 GRANT anon TO authenticator;
+
+-- create public.tasks table, http://0.0.0.0:5433/tasks
+CREATE TABLE public.tasks (
+	"id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
+	"description" text NOT NULL
+);
+INSERT INTO public.tasks ("description") VALUES
+	('Paint a self-portrait.'),
+	('Build a house.');
+
+-- create private schema
+CREATE SCHEMA private;
+
+-- create private.users table
+CREATE TABLE private.users (
+    "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
+    "email" text NOT NULL,
+    "invitation_code" text DEFAULT NULL,
+    "invited_at" timestamptz DEFAULT NULL,
+    "verification_code" text DEFAULT NULL,
+    "verified_at" timestamptz DEFAULT NULL,
+    "recovery_code" text DEFAULT NULL,
+    "recovered_at" timestamptz DEFAULT NULL,
+    "password_salt" text NOT NULL,
+    "password_key" text NOT NULL,
+    "metadata" jsonb DEFAULT NULL,
+    "created_at" timestamptz DEFAULT now() NOT NULL,
+    "updated_at" timestamptz DEFAULT now() NOT NULL,
+    UNIQUE("email")
+);
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE public.users (
+  "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
+  "email" text NOT NULL
+);
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION private.sub()
+RETURNS uuid
+LANGUAGE SQL STABLE
+AS $$
+	SELECT COALESCE(
+		current_setting('request.jwt.claim.sub', true),
+		(current_setting('request.jwt.claims', true)::jsonb ->> 'sub')
+	)::uuid
+$$;
+
+CREATE OR REPLACE FUNCTION private.role()
+RETURNS text
+LANGUAGE SQL STABLE
+AS $$
+	SELECT COALESCE(
+		current_setting('request.jwt.claim.role', true),
+		(current_setting('request.jwt.claims', true)::jsonb ->> 'role')
+	)::text
+$$;
+
+CREATE OR REPLACE FUNCTION private.email()
+RETURNS text
+LANGUAGE SQL STABLE
+AS $$
+	SELECT COALESCE(
+		current_setting('request.jwt.claim.email', true),
+		(current_setting('request.jwt.claims', true)::jsonb ->> 'email')
+	)::text
+$$;

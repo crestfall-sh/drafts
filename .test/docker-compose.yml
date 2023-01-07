@@ -26,17 +26,17 @@ services:
     volumes:
      - ./volumes/postgresql/data:/var/lib/postgresql/data
      - ./postgresql/entrypoint:/docker-entrypoint-initdb.d
-#  postgrest:
-#    image: postgrest/postgrest
-#    network_mode: "host" # 5433
-#    environment:
-#      PGRST_DB_ANON_ROLE: anon
-#      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:?error}
-#      PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:?error}
-#      PGRST_DB_URI: postgres://${POSTGRES_USER:?error}:${POSTGRES_PASSWORD:?error}@localhost:5432/postgres
-#      PGRST_SERVER_PORT: 5433
-#      PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:?error}
-#      PGRST_JWT_SECRET_IS_BASE64: ${PGRST_JWT_SECRET_IS_BASE64:?error}
-#      PGRST_JWT_AUD: crestfall
-#    depends_on:
-#      - postgresql
+  postgrest:
+    image: postgrest/postgrest
+    network_mode: "host" # 5433
+    environment:
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_SCHEMAS: ${PGRST_DB_SCHEMAS:?error}
+      PGRST_DB_EXTRA_SEARCH_PATH: ${PGRST_DB_EXTRA_SEARCH_PATH:?error}
+      PGRST_DB_URI: postgres://${POSTGRES_USER:?error}:${POSTGRES_PASSWORD:?error}@localhost:5432/postgres
+      PGRST_SERVER_PORT: 5433
+      PGRST_JWT_SECRET: ${PGRST_JWT_SECRET:?error}
+      PGRST_JWT_SECRET_IS_BASE64: ${PGRST_JWT_SECRET_IS_BASE64:?error}
+      PGRST_JWT_AUD: crestfall
+    depends_on:
+      - postgresql
