@@ -60,10 +60,10 @@ INSERT INTO public.tasks ("description") VALUES
 	('Paint a self-portrait.'),
 	('Build a house.');
 
--- create private schema
+-- Authentication: create private schema
 CREATE SCHEMA private;
 
--- create private.users table
+-- Authentication: create private.users table
 CREATE TABLE private.users (
     "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
     "email" text NOT NULL,
@@ -82,12 +82,14 @@ CREATE TABLE private.users (
 );
 ALTER TABLE private.users ENABLE ROW LEVEL SECURITY;
 
+-- Authentication: create public.users table
 CREATE TABLE public.users (
   "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
   "email" text NOT NULL
 );
 ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
 
+-- Authentication: create private.sub function
 CREATE OR REPLACE FUNCTION private.sub()
 RETURNS uuid
 LANGUAGE SQL STABLE
@@ -98,6 +100,7 @@ AS $$
 	)::uuid
 $$;
 
+-- Authentication: create private.role function
 CREATE OR REPLACE FUNCTION private.role()
 RETURNS text
 LANGUAGE SQL STABLE
@@ -108,6 +111,7 @@ AS $$
 	)::text
 $$;
 
+-- Authentication: create private.email function
 CREATE OR REPLACE FUNCTION private.email()
 RETURNS text
 LANGUAGE SQL STABLE
@@ -117,3 +121,24 @@ AS $$
 		(current_setting('request.jwt.claims', true)::jsonb ->> 'email')
 	)::text
 $$;
+
+-- Automatic Schema Cache Reloading: event function
+-- https://postgrest.org/en/stable/schema_cache.html#schema-reloading
+CREATE OR REPLACE FUNCTION public.pgrst_watch()
+    RETURNS event_trigger
+    LANGUAGE plpgsql
+    AS $$
+BEGIN
+    NOTIFY pgrst, 'reload schema';
+END;
+$$;
+
+-- Automatic Schema Cache Reloading: trigger function every ddl_command_end event
+-- https://postgrest.org/en/stable/schema_cache.html#schema-reloading
+CREATE EVENT TRIGGER pgrst_watch ON ddl_command_end EXECUTE PROCEDURE public.pgrst_watch();
+
+-- http://localhost:5433/rpc/add_them?a=1&b=2
+-- https://postgrest.org/en/stable/api.html#stored-procedures
+CREATE FUNCTION add_them(a integer, b integer) RETURNS integer AS $$
+    SELECT a + b;
+$$ LANGUAGE SQL IMMUTABLE;
