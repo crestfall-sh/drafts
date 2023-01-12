@@ -1,11 +1,29 @@
 -- initialize extensions
 CREATE SCHEMA IF NOT EXISTS "extensions";
+CREATE EXTENSION IF NOT EXISTS "unaccent" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "http" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "pgaudit" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "pgjwt" WITH SCHEMA "extensions";
 CREATE EXTENSION IF NOT EXISTS "pgsodium";
+
+-- test unaccent:
+-- todo:
+-- [x] lower-case
+-- [x] normalize NFKC
+-- [x] unaccent / case-fold
+-- [x] regex validate for username / email
+SELECT
+    lower('Maße'),
+    lower('Hôtel'),
+	lower(normalize(extensions.unaccent('Maße'), NFKC)),
+	lower(normalize(extensions.unaccent('Hôtel'), NFKC)),
+    lower(normalize(extensions.unaccent('Maße@gmail.com'), NFKC)) ~ '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$' as "Maße@gmail.com",
+    lower(normalize(extensions.unaccent('Hôtel@gmail.com'), NFKC)) ~ '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$' as "Hôtel@gmail.com",
+    lower(normalize(extensions.unaccent('example @gmail.com'), NFKC)) ~ '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$' as "example @gmail.com",
+    lower(normalize(extensions.unaccent('example@gmail.com'), NFKC)) ~ '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+[.][A-Za-z]+$' as "example@gmail.com";
+    
 
 -- test uuid-ossp:
 SELECT extensions.uuid_generate_v4();
