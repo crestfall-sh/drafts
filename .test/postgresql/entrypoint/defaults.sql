@@ -148,7 +148,7 @@ $$ LANGUAGE SQL IMMUTABLE;
 CREATE FUNCTION sign_up(email_parameter text, password_parameter text) RETURNS void AS $$
 DECLARE
     password_salt bytea = pgsodium.crypto_pwhash_saltgen();
-    password_key bytea = pgsodium.crypto_pwhash(password_parameter, password_salt);
+    password_key bytea = pgsodium.crypto_pwhash(password_parameter::bytea, password_salt);
 BEGIN
     RAISE NOTICE 'password_parameter %', password_parameter;
     RAISE NOTICE 'password_salt %', password_salt::text;
