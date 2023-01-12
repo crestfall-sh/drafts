@@ -147,15 +147,52 @@ $$ LANGUAGE SQL IMMUTABLE;
 -- Authentication: Sign-up
 CREATE FUNCTION sign_up(email_parameter text, password_parameter text) RETURNS void AS $$
 DECLARE
+    user_record record;
     password_salt bytea = pgsodium.crypto_pwhash_saltgen();
     password_key bytea = pgsodium.crypto_pwhash(password_parameter::bytea, password_salt);
 BEGIN
-    RAISE NOTICE 'password_parameter %', password_parameter;
-    RAISE NOTICE 'password_salt %', password_salt::text;
-    RAISE NOTICE 'password_key %', password_key::text;
-    INSERT INTO private.users ("email", "password_salt", "password_key")
-        VALUES (email_parameter, password_salt::text, password_key::text);
+    RAISE NOTICE 'sign_up: %', email_parameter;
+    FOR user_record IN
+        SELECT * FROM private.users
+        WHERE "email" = email_parameter
+        LIMIT 1
+    LOOP
+        RAISE NOTICE 'FOUND: %', user_record.email;
+        RETURN;
+    END LOOP;
+    RAISE NOTICE 'NOT FOUND: %', email_parameter;
+    INSERT INTO private.users ("email", "password_salt", "password_key") VALUES (email_parameter, password_salt::text, password_key::text);
 END;
 $$ LANGUAGE plpgsql;
 
+-- Authentication: Sign-in
+CREATE FUNCTION sign_in(email_parameter text, password_parameter text) RETURNS void AS $$
+DECLARE
+    user_record record;
+    password_key bytea;
+BEGIN
+    RAISE NOTICE 'sign_in: %', email_parameter;
+    FOR user_record IN
+        (SELECT * FROM private.users WHERE "email" = email_parameter LIMIT 1)
+    LOOP
+        RAISE NOTICE 'FOUND: %', user_record.email;
+        password_key = pgsodium.crypto_pwhash(password_parameter::bytea, user_record.password_salt::bytea);
+        RAISE NOTICE 'password_key: %', password_key::text;
+        RAISE NOTICE 'user_record.password_key: %', user_record.password_key::text;
+        IF password_key::text = user_record.password_key THEN
+            RAISE NOTICE 'SIGN-IN OK: %', user_record.email;
+        END IF;
+        RETURN;
+    END LOOP;
+    RAISE NOTICE 'NOT FOUND: %', email_parameter;
+END;
+$$ LANGUAGE plpgsql;
+
+SELECT COUNT(*) FROM private.users;
 SELECT sign_up('admin@local.host', 'test1234');
+SELECT sign_up('alice@local.host', 'test1234');
+SELECT sign_up('bob@local.host', 'test1234');
+SELECT COUNT(*) FROM private.users;
+SELECT sign_in('admin@local.host', 'test1234');
+SELECT sign_in('null@local.host', 'test1234');
+SELECT COUNT(*) FROM private.users;
