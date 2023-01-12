@@ -139,15 +139,23 @@ CREATE EVENT TRIGGER pgrst_watch ON ddl_command_end EXECUTE PROCEDURE public.pgr
 
 -- http://localhost:5433/rpc/add_them?a=1&b=2
 -- https://postgrest.org/en/stable/api.html#stored-procedures
-CREATE FUNCTION add_them(a integer, b integer) RETURNS integer AS $$
+CREATE FUNCTION add_them(a integer, b integer)
+    RETURNS integer AS $$
     SELECT a + b;
 $$ LANGUAGE SQL IMMUTABLE;
 
--- Initial Users
+-- Authentication: Sign-up
+CREATE FUNCTION sign_up(email_parameter text, password_parameter text) RETURNS void AS $$
+DECLARE
+    password_salt bytea = pgsodium.crypto_pwhash_saltgen();
+    password_key bytea = pgsodium.crypto_pwhash(password_parameter, password_salt);
+BEGIN
+    RAISE NOTICE 'password_parameter %', password_parameter;
+    RAISE NOTICE 'password_salt %', password_salt::text;
+    RAISE NOTICE 'password_key %', password_key::text;
+    INSERT INTO private.users ("email", "password_salt", "password_key")
+        VALUES (email, password_salt::text, password_key::text);
+END;
+$$ LANGUAGE plpgsql;
 
-INSERT INTO private.users ("email", "password_salt", "password_key")
-VALUES (
-    'admin@local.host',
-    pgsodium.crypto_pwhash_saltgen()::text,
-    pgsodium.crypto_pwhash('test1234', "salt")::text
-);
+SELECT sign_up('admin@local.host', 'test1234');
