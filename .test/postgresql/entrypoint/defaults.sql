@@ -154,7 +154,7 @@ BEGIN
     RAISE NOTICE 'password_salt %', password_salt::text;
     RAISE NOTICE 'password_key %', password_key::text;
     INSERT INTO private.users ("email", "password_salt", "password_key")
-        VALUES (email, password_salt::text, password_key::text);
+        VALUES (email_parameter, password_salt::text, password_key::text);
 END;
 $$ LANGUAGE plpgsql;
 
