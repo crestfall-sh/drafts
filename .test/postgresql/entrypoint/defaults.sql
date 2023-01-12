@@ -142,3 +142,12 @@ CREATE EVENT TRIGGER pgrst_watch ON ddl_command_end EXECUTE PROCEDURE public.pgr
 CREATE FUNCTION add_them(a integer, b integer) RETURNS integer AS $$
     SELECT a + b;
 $$ LANGUAGE SQL IMMUTABLE;
+
+-- Initial Users
+
+INSERT INTO private.users ("email", "password_salt", "password_key")
+VALUES (
+    'admin@local.host',
+    pgsodium.crypto_pwhash_saltgen()::text,
+    pgsodium.crypto_pwhash('test1234', "salt")::text
+);
