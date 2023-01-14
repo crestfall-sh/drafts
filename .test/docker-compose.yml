@@ -26,6 +26,11 @@ services:
     volumes:
      - ./volumes/postgresql/data:/var/lib/postgresql/data
      - ./postgresql/entrypoint:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
   postgrest:
     image: postgrest/postgrest
     network_mode: "host" # 5433
