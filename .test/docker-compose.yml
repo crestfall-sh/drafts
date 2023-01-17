@@ -58,7 +58,7 @@ services:
     environment:
       LOG_LEVEL: "WARN"
       POSTGRESQL_CONNECTION_URI: "postgresql://${POSTGRES_USER:?error}:${POSTGRES_PASSWORD:?error}@localhost:5432/postgres"
-      POSTGRESQL_TABLE_NAMES_PREFIX: "supertokens_"
+      POSTGRESQL_TABLE_NAMES_PREFIX: "supertokens"
       INFO_LOG_PATH: /var/lib/supertokens/info
       ERROR_LOG_PATH: /var/lib/supertokens/error
     volumes:
