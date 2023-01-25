@@ -8,6 +8,14 @@ GRANT USAGE ON SCHEMA public TO anon; -- schema-level permissions
 GRANT SELECT ON ALL TABLES IN SCHEMA public TO anon; -- grant for table-level, rls for row-level permissions
 GRANT anon TO authenticator;
 
+-- "authenticated" role for postgrest
+CREATE ROLE authenticated NOLOGIN NOINHERIT;
+ALTER ROLE authenticated SET statement_timeout = '5s';
+GRANT USAGE ON SCHEMA public TO authenticated; -- schema-level permissions
+GRANT USAGE ON SCHEMA extensions TO authenticated; -- schema-level permissions
+GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated; -- table-level permissions
+GRANT authenticated TO authenticator;
+ 
 -- "private" schema
 CREATE SCHEMA private;
 
@@ -30,14 +38,7 @@ CREATE TABLE private.users (
 );
 ALTER TABLE private.users ENABLE ROW LEVEL SECURITY;
 
--- "public.users"
-CREATE TABLE public.users (
-  "id" uuid DEFAULT extensions.uuid_generate_v4() PRIMARY KEY,
-  "email" text NOT NULL
-);
-ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
-
--- "private.sub"
+-- "private.sub" function
 CREATE OR REPLACE FUNCTION private.sub()
 RETURNS uuid
 LANGUAGE SQL STABLE
@@ -48,7 +49,7 @@ AS $$
 	)::uuid
 $$;
 
--- "private.role"
+-- "private.role" function
 CREATE OR REPLACE FUNCTION private.role()
 RETURNS text
 LANGUAGE SQL STABLE
@@ -59,7 +60,7 @@ AS $$
 	)::text
 $$;
 
--- "private.email"
+-- "private.email" function
 CREATE OR REPLACE FUNCTION private.email()
 RETURNS text
 LANGUAGE SQL STABLE
@@ -71,38 +72,38 @@ AS $$
 $$;
 
 -- "sign_up" function
-CREATE FUNCTION sign_up(email_parameter text, password_parameter text) RETURNS void AS $$
+CREATE FUNCTION sign_up(param_email text, param_password text) RETURNS void AS $$
 DECLARE
     user_record record;
     password_salt bytea = pgsodium.crypto_pwhash_saltgen();
-    password_key bytea = pgsodium.crypto_pwhash(password_parameter::bytea, password_salt);
+    password_key bytea = pgsodium.crypto_pwhash(param_password::bytea, password_salt);
 BEGIN
-    RAISE NOTICE 'sign_up: %', email_parameter;
+    RAISE NOTICE 'sign_up: %', param_email;
     FOR user_record IN
         SELECT * FROM private.users
-        WHERE "email" = email_parameter
+        WHERE "email" = param_email
         LIMIT 1
     LOOP
         RAISE NOTICE 'FOUND: %', user_record.email;
         RETURN;
     END LOOP;
-    RAISE NOTICE 'NOT FOUND: %', email_parameter;
-    INSERT INTO private.users ("email", "password_salt", "password_key") VALUES (email_parameter, password_salt::text, password_key::text);
+    RAISE NOTICE 'NOT FOUND: %', param_email;
+    INSERT INTO private.users ("email", "password_salt", "password_key") VALUES (param_email, password_salt::text, password_key::text);
 END;
 $$ LANGUAGE plpgsql;
 
 -- "sign_in" function
-CREATE FUNCTION sign_in(email_parameter text, password_parameter text) RETURNS void AS $$
+CREATE FUNCTION sign_in(param_email text, param_password text) RETURNS void AS $$
 DECLARE
     user_record record;
     password_key bytea;
 BEGIN
-    RAISE NOTICE 'sign_in: %', email_parameter;
+    RAISE NOTICE 'sign_in: %', param_email;
     FOR user_record IN
-        (SELECT * FROM private.users WHERE "email" = email_parameter LIMIT 1)
+        (SELECT * FROM private.users WHERE "email" = param_email LIMIT 1)
     LOOP
         RAISE NOTICE 'FOUND: %', user_record.email;
-        password_key = pgsodium.crypto_pwhash(password_parameter::bytea, user_record.password_salt::bytea);
+        password_key = pgsodium.crypto_pwhash(param_password::bytea, user_record.password_salt::bytea);
         RAISE NOTICE 'password_key: %', password_key::text;
         RAISE NOTICE 'user_record.password_key: %', user_record.password_key::text;
         IF password_key::text = user_record.password_key THEN
@@ -110,7 +111,7 @@ BEGIN
         END IF;
         RETURN;
     END LOOP;
-    RAISE NOTICE 'NOT FOUND: %', email_parameter;
+    RAISE NOTICE 'NOT FOUND: %', param_email;
 END;
 $$ LANGUAGE plpgsql;
 
