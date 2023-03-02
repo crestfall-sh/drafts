@@ -12,7 +12,9 @@ const functions_path = path.join(process.cwd(), '/functions/');
 assert(fs.existsSync(functions_path) === true);
 
 const pathnames = fs.readdirSync(functions_path);
+
 for (let i = 0, l = pathnames.length; i < l; i += 1) {
+
   const pathname = pathnames[i];
 
   const function_path = path.join(functions_path, pathname);
