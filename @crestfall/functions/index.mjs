@@ -5,9 +5,9 @@
 
 import fs from 'fs';
 import path from 'path';
+import child_process from 'child_process';
 import assert from 'assert';
 import fetch from 'node-fetch';
-
 
 const argv = process.argv;
 
@@ -29,13 +29,12 @@ console.log(`action: ${action}`);
  * 6. Click "Generate token".
  * 7. Copy your new personal access token.
  *
+ * Example access token:
  * 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
  *
  */
 
 process.nextTick(async () => {
-  // we can list all repositories
-  // we can list
   switch (action) {
     case 'lr': {
       console.log('listing repositories..');
@@ -106,7 +105,15 @@ process.nextTick(async () => {
       const data = await response.arrayBuffer();
       const data_buffer = Buffer.from(data);
       console.log({ data_buffer });
-      fs.writeFileSync(path.join(process.cwd(), 'test.tar.gz'), data_buffer);
+      const snapshot_id = `${owner}-${repository}-${reference_short}`;
+      console.log({ snapshot_id });
+      const snapshot_tarball_path = path.join(process.cwd(), `${snapshot_id}.tar.gz`);
+      console.log({ snapshot_tarball_path });
+      fs.writeFileSync(snapshot_tarball_path, data_buffer);
+      child_process.spawnSync('tar', ['--extract', '--ungzip', `--file=${snapshot_tarball_path}`]);
+      const snapshot_extract_path = path.join(process.cwd(), snapshot_id);
+      console.log(snapshot_extract_path, fs.existsSync(snapshot_extract_path));
+      fs.unlinkSync(snapshot_tarball_path);
       break;
     }
     default: {
