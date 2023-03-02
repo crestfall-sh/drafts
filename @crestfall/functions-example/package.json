@@ -1,0 +1,13 @@
+{
+  "name": "@crestfall-sh/functions-example",
+  "version": "0.0.0",
+  "author": "joshxyzhimself <joshxyzhimself@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "mime-types": "^2.1.35",
+    "uWebSockets.js": "github:uNetworking/uWebSockets.js#v20.19.0"
+  },
+  "scripts": {
+    "start": "node ./index.mjs"
+  }
+}
