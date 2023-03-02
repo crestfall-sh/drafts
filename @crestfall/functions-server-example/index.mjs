@@ -29,7 +29,7 @@ for (let i = 0, l = pathnames.length; i < l; i += 1) {
 
 }
 
-const port = 8080;
+const port = typeof process.env['CRESTFALL_FUNCTION_PORT'] === 'string' ? Number(process.env['CRESTFALL_FUNCTION_PORT']) : 8080;
 
 console.log(`Crestfall Functions: Listening at port ${port}..`);
 const token = await server.http(app, server.port_access_types.EXCLUSIVE, port);
