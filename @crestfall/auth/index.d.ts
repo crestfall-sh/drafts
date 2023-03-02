@@ -19,3 +19,4 @@ interface user {
 
 export type email_sign_in = (email: string, password: string) => Promise<void>;
 export type phone_sign_up = (phone: string, password: string) => Promise<void>;
+ 

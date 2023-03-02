@@ -1,0 +1,9 @@
+{
+  "name": "@crestfall-sh/functions",
+  "version": "0.0.0",
+  "author": "joshxyzhimself <joshxyzhimself@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "modules": "github:crestfall-sh/modules"
+  }
+}

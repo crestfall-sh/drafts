@@ -1,0 +1,11 @@
+# sudo docker compose up --force-recreate --build
+version: '3.8'
+services:
+  caddy:
+    image: caddy:2
+    network_mode: "host"
+    volumes:
+      - ./volumes/caddy/data:/data
+      - ./volumes/caddy/config:/config
+      - ./volumes/caddy/logs:/var/log/caddy/
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile

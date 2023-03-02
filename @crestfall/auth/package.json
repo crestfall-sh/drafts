@@ -1,0 +1,14 @@
+{
+  "name": "@crestfall-sh/auth",
+  "version": "0.0.0",
+  "author": "joshxyzhimself <joshxyzhimself@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.3.0",
+    "eslint-plugin-react": "^7.26.1",
+    "eslint-plugin-react-hooks": "^4.2.0"
+  },
+  "dependencies": {
+    "modules": "github:crestfall-sh/modules"
+  }
+}
