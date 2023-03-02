@@ -4,6 +4,7 @@
   "author": "joshxyzhimself <joshxyzhimself@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "modules": "github:crestfall-sh/modules"
+    "modules": "github:crestfall-sh/modules",
+    "node-fetch": "^3.3.0"
   }
 }
