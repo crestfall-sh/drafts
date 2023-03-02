@@ -1,14 +1,21 @@
 // @ts-check
 
 import fs from 'fs';
+import url from 'url';
 import path from 'path';
 import assert from 'assert';
 import * as server from './server/index.mjs';
-import on_exit from './on_exit.mjs';
+import on_exit from './server/on_exit.mjs';
+import env from './server/env.mjs';
+
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+console.log(env);
 
 const app = server.uws.App({});
 
-const functions_path = path.join(process.cwd(), '/functions/');
+const functions_path = path.join(__dirname, '/functions/');
 assert(fs.existsSync(functions_path) === true);
 
 const pathnames = fs.readdirSync(functions_path);
@@ -23,9 +30,12 @@ for (let i = 0, l = pathnames.length; i < l; i += 1) {
   const function_entry_path = path.join(function_path, 'index.mjs');
   assert(fs.existsSync(function_entry_path) === true);
 
+  console.log(`Crestfall Functions: Function "${pathname}" importing..`);
   const fn = await import(function_entry_path);
   assert(fn.bind instanceof Function);
   fn.bind(app, server);
+
+  console.log(`Crestfall Functions: Function "${pathname}" OK.`);
 
 }
 

@@ -9,7 +9,7 @@ import assert from 'assert';
  * @description SIGTSTP, ctrl + z
  * @description SIGINT, ctrl + c
  */
-export const on_exit = (callback) => {
+const on_exit = (callback) => {
   assert(callback instanceof Function);
   /**
    * @param {string} signal
