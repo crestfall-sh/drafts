@@ -29,6 +29,7 @@
   - Locally thru Dockerized Node.js
   - Remotely thru Functions Manager (needs an access token, just send the function id and function tarball)
   - Remotely thru GitHub and Functions Manager (functions manager should listen to repository updates)
+
 ## Usage
 
 #### Creating Environment Variables (.env file)
